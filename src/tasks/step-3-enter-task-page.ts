@@ -168,7 +168,7 @@ export async function enterTaskPage(
   );
 
   // debug 测试，尝试直接快进到末尾
-  if (task.title === '孔子在文化上的承上启下') {
+  if (true) {
     await videoFrameLoc
       .locator('video')
       .evaluate(async (video: HTMLVideoElement) => {
