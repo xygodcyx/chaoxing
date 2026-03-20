@@ -5,7 +5,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start:init": "npx playwright install && pnpm start",
+    "install": "npx playwright install",
     "start": "ts-node src/index.ts"
   },
   "keywords": [],
