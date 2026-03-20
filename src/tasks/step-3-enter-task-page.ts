@@ -23,40 +23,30 @@ import { LoggerManager } from '../logs/LoggerManager.ts';
  * 阅读 1
  * 问卷 1
  */
-
 export async function enterTaskPage(
   page: Page,
   task: TaskItem,
-  options: {
-    timeout?: number;
-    waitForIframe?: boolean;
-  } = {
-    timeout: 30000,
-    waitForIframe: true,
-  },
 ) {
-  if (false && (task.isFinish || task.lessCount === 0)) {
+  if (true && (task.isFinish || task.lessCount === 0)) {
     LoggerManager.Instance.info(
-      `${DataManager.Instance.curCourse!.title} - ${task.title} 已完成，跳过`,
+      `${task.title} 已完成，跳过`,
     );
     EventManager.Instance.emit(EVENTS_ENUM.TASK_DONE, task);
     return;
   }
 
   LoggerManager.Instance.start(
-    `进入特定章节: ${DataManager.Instance.curCourse!.title} - ${task.title} 开始观看`,
+    `进入特定章节: ${task.title} 开始观看...`,
   );
 
   const searchObj = new URLSearchParams(task.searchParams);
   await page.goto(task.link);
   await page.waitForLoadState('domcontentloaded');
 
-  const isAimPage = await page
-    .getByText('通过本章学习，你需要掌握和了解以下问题')
-    .count();
+  let pageTitle = await page.title();
 
-  if (isAimPage) {
-    LoggerManager.Instance.info(
+  if (pageTitle === '学习目标') {
+    LoggerManager.Instance.warn(
       '当前页面为学习目标页, 等待大约1-2秒后跳过学习目标页',
     );
     await waitForRandomTime(2000);
@@ -65,10 +55,10 @@ export async function enterTaskPage(
       `${BASE_TASK_URL}?${searchObj.toString()}`,
     );
     await page.waitForLoadState('domcontentloaded');
-    LoggerManager.Instance.info(
-      '跳转到下一个任务点啦，大概率是视频页面',
-    );
-  } else if (task.title === '问卷调查') {
+  } else if (
+    pageTitle === '问卷调查' ||
+    task.title === '问卷调查'
+  ) {
     LoggerManager.Instance.info(
       '当前页面为问卷调查，似乎已经到了最后一个任务点，任务结束',
     );
@@ -115,27 +105,50 @@ export async function enterTaskPage(
       );
       return;
     }
+  } else if (pageTitle === '章节测验') {
+    // TODO 完成章节测验的自动答题功能
+    LoggerManager.Instance.warn(
+      '当前页面为章节测验，但还没开发，直接跳过',
+    );
+    EventManager.Instance.emit(EVENTS_ENUM.TASK_DONE, task);
   }
 
   if (task.lessCount === 1) {
-    LoggerManager.Instance.info(
-      '当前章节的视频任务刷完啦，应该开始答题但还没开发完，所以先跳过',
+    LoggerManager.Instance.warn(
+      '当前章节的视频任务刷完啦，因为还没开发自动答题功能，所以先跳过答题直接进入下一个任务',
     );
     EventManager.Instance.emit(EVENTS_ENUM.TASK_DONE, task);
     return;
   }
 
-  const videoFrameLoc = page.frameLocator('iframe');
+  const frameLoc = page.frameLocator('iframe');
+  const videoLoc = frameLoc.locator('video');
+
+  pageTitle = await page.title();
+
+  if (pageTitle === '视频') {
+    LoggerManager.Instance.info(
+      '当前页面为视频页面，开始执行任务',
+    );
+  } else {
+    const pageTitle = await page.title();
+    const pageUrl = page.url();
+    LoggerManager.Instance.warn(
+      `未知页面: ${pageTitle} ，跳过该任务请手动前往页面进行debug: ${pageUrl}`,
+    );
+    EventManager.Instance.emit(EVENTS_ENUM.TASK_DONE, task);
+    return;
+  }
 
   const getIsPaused = async () =>
-    await videoFrameLoc
+    await frameLoc
       .locator('video')
       .evaluate(async (video: HTMLVideoElement) => {
         return video.paused;
       });
 
   // 视频还未加载时，只有一个蒙层按钮被展示出来
-  const playButton = videoFrameLoc.locator(
+  const playButton = frameLoc.locator(
     '.vjs-big-play-button',
   );
   const isInitPaused = await getIsPaused();
@@ -146,12 +159,11 @@ export async function enterTaskPage(
   }
 
   // 视频播放加载出来的时候左下角的播放/暂停按钮
-  const videoControlButton = videoFrameLoc.locator(
+  const videoControlButton = frameLoc.locator(
     '.vjs-play-control',
   );
-  // 等待视频加载完毕
-  const videoLoc = videoFrameLoc.locator('video');
 
+  // 等待视频加载完毕
   const isAgainPause = await getIsPaused();
 
   if (isAgainPause) {
@@ -205,7 +217,7 @@ export async function enterTaskPage(
 
   // debug 测试，尝试直接快进到末尾
   if (true) {
-    await videoFrameLoc
+    await frameLoc
       .locator('video')
       .evaluate(async (video: HTMLVideoElement) => {
         video.currentTime = duration - 1;

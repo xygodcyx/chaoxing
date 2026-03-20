@@ -14,19 +14,10 @@ import { LoggerManager } from '../logs/LoggerManager.ts';
 export async function enterCoursePage(
   page: Page,
   course: CourseItem,
-  options: {
-    timeout?: number;
-    waitForIframe?: boolean;
-  } = {
-    timeout: 30000,
-    waitForIframe: true,
-  },
 ) {
   LoggerManager.Instance.start(
     `进入${course.title} 章节页面，开始获取任务信息...`,
   );
-
-  DataManager.Instance.curCourse!.title = course.title;
 
   await page.goto(course.link);
 

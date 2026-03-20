@@ -2,16 +2,7 @@ import type { Page } from 'playwright';
 import type { CourseItem } from '../types/index.ts';
 import { LoggerManager } from '../logs/LoggerManager.ts';
 
-export async function enterPersonCenter(
-  page: Page,
-  options: {
-    timeout?: number;
-  } = {
-    timeout: 30000,
-  },
-) {
-  const { timeout } = options;
-
+export async function enterPersonCenter(page: Page) {
   LoggerManager.Instance.start(
     `进入个人中心页面，开始获取课程信息...`,
   );
@@ -20,13 +11,9 @@ export async function enterPersonCenter(
     'https://i.mooc.chaoxing.com/space/index',
   );
 
-  await page.waitForLoadState('domcontentloaded', {
-    timeout,
-  });
+  await page.waitForLoadState('domcontentloaded');
 
-  const iframe = await page.waitForSelector('iframe', {
-    timeout,
-  });
+  const iframe = await page.waitForSelector('iframe');
   if (!iframe) {
     LoggerManager.Instance.error(`获取课程失败...`);
     return [];
@@ -36,9 +23,9 @@ export async function enterPersonCenter(
     LoggerManager.Instance.error(`获取课程失败...`);
     return [];
   }
-  await frame.waitForLoadState('domcontentloaded', {
-    timeout,
-  });
+  
+  await frame.waitForLoadState('domcontentloaded');
+
   const newUrl = (await iframe?.getAttribute('src')) || '';
 
   await page.goto(newUrl);

@@ -12,3 +12,6 @@ playwright/.auth
 playwright-user-data
 
 *.log
+*.env
+
+cache

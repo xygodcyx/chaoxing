@@ -9,6 +9,7 @@ export type EVENT =
 export const LOG_LEVEL_ENUM = {
   INFO: 'info',
   START: 'start',
+  BOX: 'box',
   SUCCESS: 'success',
   WARN: 'warn',
   ERROR: 'error',
@@ -16,3 +17,13 @@ export const LOG_LEVEL_ENUM = {
 
 export type LOG_LEVEL =
   (typeof LOG_LEVEL_ENUM)[keyof typeof LOG_LEVEL_ENUM];
+
+export const CACHE_KEY_ENUM = {
+  KEYS: 'KEYS',
+  USER_STATUS: 'USER_STATUS',
+  COURSES: 'COURSES',
+  TASKS: 'TASKS',
+} as const;
+
+export type CACHE_KEY =
+  (typeof CACHE_KEY_ENUM)[keyof typeof CACHE_KEY_ENUM];

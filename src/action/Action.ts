@@ -1,0 +1,228 @@
+import fs from 'fs';
+import { chromium } from 'playwright';
+import type { Browser, Page } from 'playwright';
+import 'dotenv/config';
+
+import { enterPersonCenter } from '../tasks/step-1-enter-person-center-page.ts';
+import { enterCoursePage } from '../tasks/step-2-enter-course-page.ts';
+import type {
+  CourseItem,
+  TaskItem,
+  UserInfo,
+  UserStatus,
+} from '../types/index.ts';
+
+import { enterLoginPage } from '../tasks/step-0-enter-login-page.ts';
+import { AUTH_FILE_BASE_PATH } from '../consts/index.ts';
+import { enterTaskPage } from '../tasks/step-3-enter-task-page.ts';
+
+import config from '../config/index.ts';
+import EventManager from '../runtime/EventManager.ts';
+
+import {
+  CACHE_KEY_ENUM,
+  EVENTS_ENUM,
+} from '../enum/index.ts';
+import { DataManager } from '../runtime/DataManager.ts';
+import { LoggerManager } from '../logs/LoggerManager.ts';
+import { CacheManager } from '../runtime/CacheManager.ts';
+
+export default class Action {
+  public user: UserStatus;
+
+  public browser: Browser | null = null;
+  public page: Page | null = null;
+
+  public courses: Array<CourseItem> = [];
+  public curCourse: CourseItem | null = null;
+
+  public tasks: Array<TaskItem> = [];
+  public curTask: TaskItem | null = null;
+
+  constructor(user: UserStatus) {
+    this.user = user;
+  }
+
+  async init() {
+    EventManager.Instance.on(
+      EVENTS_ENUM.TASK_DONE,
+      this.onTaskDone,
+      this,
+    );
+
+    EventManager.Instance.on(
+      EVENTS_ENUM.COURSE_DOWN,
+      this.onCourseDone,
+      this,
+    );
+    const {
+      info: { phone, password },
+    } = this.user;
+
+    const authPath = `${AUTH_FILE_BASE_PATH}/user-${phone}.json`;
+
+    if (!fs.existsSync(authPath)) {
+      // 登录页面单独用一个browser实例
+      await enterLoginPage(phone, password);
+    }
+
+    this.browser = await chromium.launch(config);
+
+    const context = await this.browser.newContext({
+      storageState: authPath,
+    });
+
+    this.page = await context.newPage();
+
+    // 进入个人中心
+    this.courses = CacheManager.Instance.load<
+      Array<CourseItem>
+    >(
+      `${this.user.info.phone}-${CACHE_KEY_ENUM.COURSES}`,
+      [],
+    );
+    if (this.courses.length === 0) {
+      this.courses = await enterPersonCenter(this.page);
+      CacheManager.Instance.save(
+        `${this.user.info.phone}-${CACHE_KEY_ENUM.COURSES}`,
+        this.courses,
+      );
+    }
+
+    if (this.courses.length === 0) {
+      LoggerManager.Instance.warn('没有课程要刷');
+      return;
+    }
+
+    // 进入特定的课程页面
+
+    this.curCourse =
+      this.courses.find(
+        c => c.title === this.user.curCourseName,
+      ) || this.courses[0];
+
+    this.tasks = CacheManager.Instance.load<
+      Array<TaskItem>
+    >(
+      `${this.user.info.phone}-${CACHE_KEY_ENUM.TASKS}`,
+      [],
+    );
+
+    if (this.tasks.length === 0) {
+      this.tasks = await enterCoursePage(
+        this.page,
+        this.curCourse,
+      );
+      CacheManager.Instance.save(
+        `${this.user.info.phone}-${CACHE_KEY_ENUM.TASKS}`,
+        this.tasks,
+      );
+    }
+
+    if (this.tasks.length === 0) {
+      LoggerManager.Instance.warn('没有任务要被执行');
+      return;
+    }
+
+    this.curTask =
+      this.tasks.find(
+        c => c.title === this.user.curTaskName,
+      ) || this.tasks[0];
+
+    await this.updateCurCourseState();
+    await this.updateCurTaskState();
+
+    enterTaskPage(this.page, this.curTask);
+  }
+
+  async startCourseTask(
+    page: Page,
+    course: CourseItem,
+    task?: TaskItem,
+  ) {
+    this.tasks = await enterCoursePage(page, course);
+    if (this.tasks.length === 0) {
+      LoggerManager.Instance.warn('没有任务要被执行');
+      return;
+    }
+    this.curTask = task || this.tasks[0];
+    enterTaskPage(page, this.curTask);
+  }
+
+  onTaskDone(task: TaskItem) {
+    const { page, tasks, curCourse } = this;
+    LoggerManager.Instance.success(
+      `已经完成的任务： ${curCourse?.title}(${task.index}) - ${task.title}(${task.index})`,
+    );
+    if (task.index === tasks.length - 1) {
+      LoggerManager.Instance.box(
+        ` ${this.curCourse?.title} 的任务全部刷完啦`,
+      );
+      EventManager.Instance.emit(
+        EVENTS_ENUM.COURSE_DOWN,
+        this.curCourse,
+      );
+      return;
+    }
+    if (!page) {
+      LoggerManager.Instance.error(
+        '浏览器页面实例丢失，请检查错误...',
+      );
+      return;
+    }
+    this.curTask = tasks[task.index + 1];
+
+    this.updateCurTaskState();
+
+    enterTaskPage(page, this.curTask);
+  }
+
+  onCourseDone(course: CourseItem) {
+    const { browser, page, courses, curCourse } = this;
+
+    LoggerManager.Instance.success(
+      `已经完成的课程： ${curCourse?.title}(${course.index})`,
+    );
+    if (course.index === courses.length - 1) {
+      LoggerManager.Instance.success(
+        '所有课程全部刷完啦！！！关闭浏览器',
+      );
+      browser?.close();
+      return;
+    }
+    if (!page) {
+      LoggerManager.Instance.error(
+        '浏览器页面实例丢失，请检查错误...',
+      );
+      return;
+    }
+    this.curCourse = courses[course.index + 1];
+
+    this.updateCurCourseState();
+
+    this.startCourseTask(page, this.curCourse);
+  }
+
+  async updateCurCourseState() {
+    this.user.curCourseName = this.curCourse?.title;
+    DataManager.Instance.userStatus[
+      this.user.info.phone
+    ].curCourseName = this.curCourse?.title;
+    await CacheManager.Instance.save(
+      CACHE_KEY_ENUM.USER_STATUS,
+      DataManager.Instance.userStatus,
+    );
+  }
+
+  async updateCurTaskState() {
+    this.user.curTaskName = this.curTask?.title;
+    DataManager.Instance.userStatus[
+      this.user.info.phone
+    ].curTaskName = this.curTask?.title;
+
+    await CacheManager.Instance.save(
+      CACHE_KEY_ENUM.USER_STATUS,
+      DataManager.Instance.userStatus,
+    );
+  }
+}

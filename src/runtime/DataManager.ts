@@ -1,8 +1,9 @@
-import type { Page } from 'playwright';
+import type { Browser, Page } from 'playwright';
 import Singleton from '../base/Singleton.ts';
 import type {
   CourseItem,
   TaskItem,
+  UserStatus,
 } from '../types/index.ts';
 
 export class DataManager extends Singleton {
@@ -10,6 +11,9 @@ export class DataManager extends Singleton {
     return super.GetInstance<DataManager>();
   }
 
+  public userStatus: Record<string, UserStatus> = {};
+
+  public browser: Browser | null = null;
   public page: Page | null = null;
 
   public courses: Array<CourseItem> = [];

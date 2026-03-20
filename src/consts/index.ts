@@ -1,6 +1,17 @@
-export const LOGGER_FILE_PATH = 'src/logs/index.log';
+import path from 'path';
 
-export const AUTH_FILE_BASE_PATH = './playwright/.auth';
+export const LOGGER_FILE_PATH = path.resolve(
+  'src',
+  'logs',
+  'index.log',
+);
+export const CACHE_DIR_PATH = path.resolve('src', 'cache');
+
+export const AUTH_FILE_BASE_PATH = path.resolve(
+  'playwright',
+  '.auth',
+);
+
 export const BASE_URL = 'https://mooc2-ans.chaoxing.com';
 export const BASE_VERSION_ONE_URL =
   'https://mooc1.chaoxing.com';
