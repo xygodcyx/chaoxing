@@ -126,7 +126,7 @@ export async function enterTaskPage(
 
   pageTitle = await page.title();
 
-  if (pageTitle === '视频') {
+  if (pageTitle === '视频' || pageTitle === '课程') {
     LoggerManager.Instance.info(
       '当前页面为视频页面，开始执行任务',
     );
@@ -196,25 +196,6 @@ export async function enterTaskPage(
       },
     );
 
-  await videoLoc.evaluate(
-    async (video: HTMLVideoElement) => {
-      video.onpause = async () => {
-        for (let index = 0; index < 10; index++) {
-          const paused = await getIsPaused();
-          if (!paused) {
-            LoggerManager.Instance.success(`重试成功`);
-            break;
-          }
-          LoggerManager.Instance.warn(
-            `尝试重新播放视频:${task.title}, 重试次数: ${index + 1}...`,
-          );
-          await waitForTime(2000);
-          await videoControlButton.click();
-        }
-      };
-    },
-  );
-
   // debug 测试，尝试直接快进到末尾
   if (true) {
     await frameLoc
@@ -224,19 +205,37 @@ export async function enterTaskPage(
       });
   }
 
-  for (let index = 0; index < 10; index++) {
-    const paused = await getIsPaused();
-    if (!paused) {
-      LoggerManager.Instance.success(`重试成功`);
-      break;
+  async function retryPlayVideo() {
+    for (let index = 0; index < 10; index++) {
+      const paused = await getIsPaused();
+      if (!paused) {
+        LoggerManager.Instance.success(`重试成功`);
+        break;
+      }
+      LoggerManager.Instance.info(
+        `尝试重新播放视频:${task.title}, 重试次数: ${index + 1}...`,
+      );
+      await waitForRandomTime(2000);
+      await videoControlButton.click();
     }
-    LoggerManager.Instance.info(
-      `尝试重新播放视频:${task.title}, 重试次数: ${index + 1}...`,
-    );
-    await waitForRandomTime(2000);
-    await videoControlButton.click();
   }
 
+  page.on('console', msg => {
+    let id: NodeJS.Timeout | null = null;
+    if (msg.text() === 'VIDEO_PAUSED') {
+      if (id) clearInterval(id);
+      id = setTimeout(() => {
+        retryPlayVideo();
+      }, 6000);
+    }
+  });
+
+  await videoLoc.evaluate((video: HTMLVideoElement) => {
+    video.addEventListener('pause', () => {
+      console.log('VIDEO_PAUSED');
+    });
+  });
+  await retryPlayVideo();
   const bar = new cliProgress.SingleBar({
     format:
       `刷课进度: ${task.title} || ` +
@@ -250,6 +249,7 @@ export async function enterTaskPage(
   });
 
   const initTime = await getCurTime();
+
   bar.start(duration, initTime);
 
   const timerId = setInterval(async () => {
@@ -257,10 +257,10 @@ export async function enterTaskPage(
     bar.update(time);
     if (Math.abs(duration - time) < 0.01) {
       bar.stop();
+      clearInterval(timerId);
       LoggerManager.Instance.success(
         `${task.title} 刷完啦，开始刷下一个`,
       );
-      clearInterval(timerId);
       EventManager.Instance.emit(
         EVENTS_ENUM.TASK_DONE,
         task,
