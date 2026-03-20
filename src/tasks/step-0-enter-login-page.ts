@@ -2,8 +2,9 @@
 import { chromium } from 'playwright';
 import path from 'path';
 import { AUTH_FILE_BASE_PATH } from '../consts/index.ts';
+import { LoggerManager } from '../logs/LoggerManager.ts';
 
-export async function saveAuthState(phone: string) {
+export async function enterLoginPage(phone: string) {
   const authFile = path.join(
     `${AUTH_FILE_BASE_PATH}/user-${phone}.json`,
   );
@@ -17,7 +18,7 @@ export async function saveAuthState(phone: string) {
   });
   const page = await context.newPage();
   try {
-    console.info('开始登录..');
+    LoggerManager.Instance.start('开始登录..');
     await page.goto('https://passport2.chaoxing.com/login');
 
     await page
@@ -37,11 +38,13 @@ export async function saveAuthState(phone: string) {
     );
 
     // End of authentication steps.
-    console.log('登录成功，正在保存会话状态...');
+    LoggerManager.Instance.info(
+      '登录成功，正在保存会话状态...',
+    );
 
     await page.context().storageState({ path: authFile });
 
-    console.log(`状态已保存到 ${authFile}`);
+    LoggerManager.Instance.info(`状态已保存到 ${authFile}`);
   } catch (error) {
     console.error('登录失败:', error);
   } finally {

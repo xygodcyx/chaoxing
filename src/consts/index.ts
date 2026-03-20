@@ -1,3 +1,5 @@
+export const LOGGER_FILE_PATH = 'src/logs/index.log';
+
 export const AUTH_FILE_BASE_PATH = './playwright/.auth';
 export const BASE_URL = 'https://mooc2-ans.chaoxing.com';
 export const BASE_VERSION_ONE_URL =
@@ -6,3 +8,5 @@ export const BASE_VERSION_ONE_URL =
 export const TASK_LABELS = ['视频', '章节测验'];
 
 export const BASE_TASK_URL = `${BASE_VERSION_ONE_URL}/mooc-ans/knowledge/cards`;
+
+export const BASE_READ_URL = `${BASE_VERSION_ONE_URL}/mooc-ans/course`;

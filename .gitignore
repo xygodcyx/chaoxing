@@ -10,3 +10,5 @@ node_modules/
 playwright/.auth
 
 playwright-user-data
+
+*.log

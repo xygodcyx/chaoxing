@@ -14,6 +14,9 @@ importers:
       cli-progress:
         specifier: ^3.12.0
         version: 3.12.0
+      consola:
+        specifier: ^3.4.2
+        version: 3.4.2
     devDependencies:
       '@playwright/test':
         specifier: ^1.58.2
@@ -59,6 +62,10 @@ packages:
   cli-progress@3.12.0:
     resolution: {integrity: sha512-tRkV3HJ1ASwm19THiiLIXLO7Im7wlTuKnvkYaTkyoAPefqjNg7W7DHKUlGRxy9vxDvbyCYQkQozvptuMkGCg8A==}
     engines: {node: '>=4'}
+
+  consola@3.4.2:
+    resolution: {integrity: sha512-5IKcdX0nnYavi6G7TtOhwkYzyjfJlatbjMjuLSfE2kYT5pMDOilZ4OvMhi637CcDICTmz3wARPoyhqyX1Y+XvA==}
+    engines: {node: ^14.18.0 || >=16.10.0}
 
   emoji-regex@8.0.0:
     resolution: {integrity: sha512-MSjYzcWNOA0ewAHpz0MxpYFvwg6yjy1NG3xteoqz644VCo/RPgnr1/GGt+ic3iJTzQ8Eu3TdM14SawnVUmGE6A==}
@@ -118,6 +125,8 @@ snapshots:
   cli-progress@3.12.0:
     dependencies:
       string-width: 4.2.3
+
+  consola@3.4.2: {}
 
   emoji-regex@8.0.0: {}
 
