@@ -7,7 +7,7 @@ import {
   waitForRandomTime,
   waitForTime,
 } from '../utils/index.ts';
-import type { TaskItem } from '../types/index.ts';
+import type { TaskItem, UserInfo } from '../types/index.ts';
 import {
   BASE_READ_URL,
   BASE_TASK_URL,
@@ -28,9 +28,11 @@ import consola from 'consola';
 export async function enterTaskPage(
   page: Page,
   task: TaskItem,
+  userInfo: UserInfo,
 ) {
   const taskId = Date.now();
-  DataManager.Instance.globalTaskId = taskId;
+  DataManager.Instance.globalTaskId[userInfo.phone] =
+    taskId;
 
   if (true && task.isFinish) {
     LoggerManager.Instance.info(
@@ -206,13 +208,18 @@ export async function enterTaskPage(
   async function retryPlayVideo(retryCount: number = 30) {
     if (
       isInTopicPanel ||
-      DataManager.Instance.globalTaskId !== taskId
+      DataManager.Instance.globalTaskId[userInfo.phone] !==
+        taskId
     ) {
       return;
     }
     for (let index = 0; index < retryCount; index++) {
       const paused = await getIsPaused();
-      if (DataManager.Instance.globalTaskId !== taskId) {
+      if (
+        DataManager.Instance.globalTaskId[
+          userInfo.phone
+        ] !== taskId
+      ) {
         return;
       }
       if (!paused) {
@@ -230,7 +237,10 @@ export async function enterTaskPage(
 
   page.on('console', async msg => {
     let timeId: NodeJS.Timeout | null = null;
-    if (DataManager.Instance.globalTaskId !== taskId) {
+    if (
+      DataManager.Instance.globalTaskId[userInfo.phone] !==
+      taskId
+    ) {
       return;
     }
     if (msg.text() === 'VIDEO_PAUSED') {
@@ -280,7 +290,10 @@ export async function enterTaskPage(
 
   const timeUpdateId = setInterval(async () => {
     const time = await getCurTime();
-    if (DataManager.Instance.globalTaskId !== taskId) {
+    if (
+      DataManager.Instance.globalTaskId[userInfo.phone] !==
+      taskId
+    ) {
       clearInterval(timeUpdateId);
       bar.stop();
       return;
@@ -321,7 +334,10 @@ export async function enterTaskPage(
 
   let findTopicId = setInterval(answerQuestion, 1000);
   async function answerQuestion() {
-    if (DataManager.Instance.globalTaskId !== taskId) {
+    if (
+      DataManager.Instance.globalTaskId[userInfo.phone] !==
+      taskId
+    ) {
       clearInterval(findTopicId);
       clearInterval(timeUpdateId);
       return;

@@ -136,7 +136,7 @@ export default class Action {
 
     await this.updateCurTaskState();
 
-    enterTaskPage(this.page, this.curTask);
+    enterTaskPage(this.page, this.curTask, this.user.info);
   }
 
   async startCourseTask(
@@ -154,7 +154,7 @@ export default class Action {
       return;
     }
     this.curTask = task || this.tasks[0];
-    enterTaskPage(page, this.curTask);
+    enterTaskPage(page, this.curTask, this.user.info);
   }
 
   onTaskDone(task: TaskItem) {
@@ -182,7 +182,7 @@ export default class Action {
 
     this.updateCurTaskState();
 
-    enterTaskPage(page, this.curTask);
+    enterTaskPage(page, this.curTask, this.user.info);
   }
 
   onCourseDone(course: CourseItem) {

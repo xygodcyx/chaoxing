@@ -9,23 +9,25 @@ import type {
 import { CACHE_KEY_ENUM } from './enum/index.ts';
 
 function initUserStatus() {
-  const users = JSON.parse(
+  const envUsers = JSON.parse(
     process.env.USERS || '',
   ) as Array<UserEnvInfo>;
 
-  const cacheData = CacheManager.Instance.load<
+  const cacheUsers = CacheManager.Instance.load<
     Record<string, UserStatus>
   >(CACHE_KEY_ENUM.USER_STATUS, {});
 
-  for (const user of users) {
-    const us = cacheData[user.phone] || {};
-    DataManager.Instance.userStatus[user.phone] = {
+  for (const envUser of envUsers) {
+    const cacheUser = cacheUsers[envUser.phone] || {};
+    DataManager.Instance.userStatus[envUser.phone] = {
       info: {
-        phone: user.phone,
-        password: user.password,
+        phone: envUser.phone,
+        password: envUser.password,
       },
-      curCourseName: user.course || us.curCourseName || '',
-      curTaskName: user.task || us.curTaskName || '',
+      curCourseName:
+        envUser.course || cacheUser.curCourseName || '',
+      curTaskName:
+        envUser.task || cacheUser.curTaskName || '',
     };
   }
 }
@@ -38,8 +40,8 @@ async function main() {
     )
       continue;
 
-    const us = DataManager.Instance.userStatus[key];
-    const action = new Action(us);
+    const user = DataManager.Instance.userStatus[key];
+    const action = new Action(user);
     await action.init();
   }
 }

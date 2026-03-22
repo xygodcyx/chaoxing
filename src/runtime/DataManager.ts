@@ -13,5 +13,5 @@ export class DataManager extends Singleton {
 
   public userStatus: Record<string, UserStatus> = {};
 
-  globalTaskId: number = 0;
+  public globalTaskId: Record<string, number> = {};
 }
