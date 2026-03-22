@@ -11,10 +11,12 @@ import type { TaskItem } from '../types/index.ts';
 import {
   BASE_READ_URL,
   BASE_TASK_URL,
+  MULTIPLE_CHOICE as MULTIPLE_CHOICES,
 } from '../consts/index.ts';
 import EventManager from '../runtime/EventManager.ts';
 import { EVENTS_ENUM } from '../enum/index.ts';
-import { LoggerManager } from '../logs/LoggerManager.ts';
+import { LoggerManager } from '../runtime/LoggerManager.ts';
+import consola from 'consola';
 
 /**
  * 章节任务的几种情况：
@@ -27,7 +29,10 @@ export async function enterTaskPage(
   page: Page,
   task: TaskItem,
 ) {
-  if (true && (task.isFinish || task.lessCount === 0)) {
+  const id = Date.now();
+  DataManager.Instance.globalId = id;
+
+  if (true && task.isFinish) {
     LoggerManager.Instance.info(
       `${task.title} 已完成, 跳过`,
     );
@@ -36,7 +41,7 @@ export async function enterTaskPage(
   }
 
   LoggerManager.Instance.start(
-    `进入特定章节: ${task.title} 开始观看...`,
+    `进入特定章节: ${task.title} 开始刷课...`,
   );
 
   const searchObj = new URLSearchParams(task.searchParams);
@@ -45,11 +50,16 @@ export async function enterTaskPage(
 
   let pageTitle = await page.title();
 
+  /**
+   * 首次进入第一个页面的几种情况
+   * 1.学习目标，直接跳过（一般是混在很多任务点中的第一个任务点，所以要num + 1进到下一个任务点）
+   * 2.阅读页面，点击后等待几秒直接跳过（一般是独立的一个任务点）
+   * 3.问卷调查，直接跳过（一般是独立的一个任务点）
+   */
   if (pageTitle === '学习目标') {
-    LoggerManager.Instance.warn(
-      '当前页面为学习目标页, 等待大约1-2秒后跳过学习目标页',
+    LoggerManager.Instance.info(
+      '当前页面为学习目标页, 直接跳过',
     );
-    await waitForRandomTime(2000);
     searchObj.set('num', '1');
     await page.goto(
       `${BASE_TASK_URL}?${searchObj.toString()}`,
@@ -105,20 +115,6 @@ export async function enterTaskPage(
       );
       return;
     }
-  } else if (pageTitle === '章节测验') {
-    // TODO 完成章节测验的自动答题功能
-    LoggerManager.Instance.warn(
-      '当前页面为章节测验, 但还没开发, 直接跳过',
-    );
-    EventManager.Instance.emit(EVENTS_ENUM.TASK_DONE, task);
-  }
-
-  if (task.lessCount === 1) {
-    LoggerManager.Instance.warn(
-      '当前章节的视频任务刷完啦, 因为还没开发自动答题功能, 所以先跳过答题直接进入下一个任务',
-    );
-    EventManager.Instance.emit(EVENTS_ENUM.TASK_DONE, task);
-    return;
   }
 
   const frameLoc = page.frameLocator('iframe');
@@ -126,8 +122,9 @@ export async function enterTaskPage(
 
   pageTitle = await page.title();
 
+  // 如果第一个任务点是学习目标页，那么就会自动跳过从而进入到这里，如果第一个就是视频页，那也会进入到这里
   if (pageTitle === '视频' || pageTitle === '课程') {
-    LoggerManager.Instance.info(
+    LoggerManager.Instance.success(
       '当前页面为视频页面, 开始执行任务',
     );
   } else {
@@ -141,11 +138,11 @@ export async function enterTaskPage(
   }
 
   const getIsPaused = async () =>
-    await frameLoc
-      .locator('video')
-      .evaluate(async (video: HTMLVideoElement) => {
+    await videoLoc.evaluate(
+      async (video: HTMLVideoElement) => {
         return video.paused;
-      });
+      },
+    );
 
   // 视频还未加载时, 只有一个蒙层按钮被展示出来
   const playButton = frameLoc.locator(
@@ -165,7 +162,6 @@ export async function enterTaskPage(
 
   // 等待视频加载完毕
   const isAgainPause = await getIsPaused();
-
   if (isAgainPause) {
     await videoControlButton.click();
   }
@@ -207,31 +203,38 @@ export async function enterTaskPage(
 
   let isInTopicPanel = false;
 
-  async function retryPlayVideo() {
-    if (isInTopicPanel) {
+  async function retryPlayVideo(retryCount: number = 30) {
+    if (
+      isInTopicPanel ||
+      DataManager.Instance.globalId !== id
+    ) {
       return;
     }
-    for (let index = 0; index < 10; index++) {
+    for (let index = 0; index < retryCount; index++) {
       const paused = await getIsPaused();
+      if (DataManager.Instance.globalId !== id) {
+        return;
+      }
       if (!paused) {
-        LoggerManager.Instance.success(`重新播放成功`);
+        LoggerManager.Instance.success(`播放成功`);
         break;
       }
-      LoggerManager.Instance.info(
-        `尝试重新播放视频:${task.title}, 重试次数: ${index + 1}...`,
+      LoggerManager.Instance.warn(
+        `尝试播放视频:${task.title}, 尝试次数: ${index + 1} / ${retryCount}...`,
       );
-      await waitForRandomTime(3000);
       await videoControlButton.click();
     }
   }
 
-  page.on('console', msg => {
-    let id: NodeJS.Timeout | null = null;
+  await retryPlayVideo(3);
+
+  page.on('console', async msg => {
+    if (DataManager.Instance.globalId !== id) {
+      return;
+    }
     if (msg.text() === 'VIDEO_PAUSED') {
-      if (id) clearInterval(id);
-      id = setTimeout(() => {
-        retryPlayVideo();
-      }, 6000);
+      await retryPlayVideo();
+    } else if (msg.text() === 'VIDEO_PLAYED') {
     }
   });
 
@@ -240,8 +243,20 @@ export async function enterTaskPage(
       console.log('VIDEO_PAUSED');
     });
   });
+  await videoLoc.evaluate((video: HTMLVideoElement) => {
+    video.addEventListener('play', () => {
+      console.log('VIDEO_PLAYED');
+    });
+  });
 
-  await retryPlayVideo();
+  function pauseBar() {
+    bar.stop(); // 停止并释放命令行行首
+  }
+
+  function resumeBar(total: number, current: number) {
+    // 重新启动，它会从上一行继续开始绘制
+    bar.start(total, current);
+  }
 
   const bar = new cliProgress.SingleBar({
     format:
@@ -259,25 +274,54 @@ export async function enterTaskPage(
 
   bar.start(duration, initTime);
 
-  const timerId = setInterval(async () => {
+  const timeUpdateId = setInterval(async () => {
     const time = await getCurTime();
+    if (DataManager.Instance.globalId !== id) {
+      clearInterval(timeUpdateId);
+      bar.stop();
+      return;
+    }
     bar.update(time);
     if (Math.abs(duration - time) < 0.01) {
       bar.stop();
       clearInterval(findTopicId);
-      clearInterval(timerId);
+      clearInterval(timeUpdateId);
       LoggerManager.Instance.success(
-        `${task.title} 刷完啦, 开始刷下一个`,
+        '当前章节的视频任务刷完啦, 进入答题页面开始答题',
       );
-      EventManager.Instance.emit(
-        EVENTS_ENUM.TASK_DONE,
-        task,
+      const curNum: number = +searchObj.get('num')!;
+      searchObj.set('num', String(curNum + 1));
+      await page.goto(
+        `${BASE_TASK_URL}?${searchObj.toString()}`,
       );
+      await page.waitForLoadState('domcontentloaded');
+
+      pageTitle = await page.title();
+      if (pageTitle === '章节测验') {
+        // TODO 完成章节测验的自动答题功能
+        LoggerManager.Instance.warn(
+          '当前页面为章节测验, 但还没开发, 直接跳过',
+        );
+        await waitForRandomTime(2000);
+        LoggerManager.Instance.success(
+          `${task.title} 刷完啦, 开始刷下一个`,
+        );
+        EventManager.Instance.emit(
+          EVENTS_ENUM.TASK_DONE,
+          task,
+        );
+        return;
+      }
     }
   }, 1000);
 
   let findTopicId = setInterval(answerQuestion, 1000);
   async function answerQuestion() {
+    if (DataManager.Instance.globalId !== id) {
+      clearInterval(findTopicId);
+      clearInterval(timeUpdateId);
+      return;
+    }
     const tkTopicLoc = frameLoc.locator('.tkTopic');
     const tkTopicCount = await tkTopicLoc.count();
     if (!tkTopicCount) {
@@ -286,36 +330,79 @@ export async function enterTaskPage(
     const tkTitle = await tkTopicLoc
       .locator('.tkTopic_title')
       .textContent();
+    const whiteList = ['判断题', '多选题'];
 
-    if (tkTitle === '判断题') {
-      LoggerManager.Instance.warn('出现答题框了, 开始答题');
-      isInTopicPanel = true;
-      clearInterval(findTopicId);
-      const submitButton = tkTopicLoc.locator(
-        '#videoquiz-submit',
-      );
-      const spanNotLoc = tkTopicLoc.locator('#spanNot');
-
-      const optionLis = await tkTopicLoc
+    if (!tkTitle) {
+      return;
+    }
+    if (!whiteList.includes(tkTitle.trim())) {
+      return;
+    }
+    pauseBar();
+    LoggerManager.Instance.info('出现答题框了, 开始答题');
+    isInTopicPanel = true;
+    clearInterval(findTopicId);
+    const submitButtonLoc = tkTopicLoc.locator(
+      '#videoquiz-submit',
+    );
+    const spanNotLoc = tkTopicLoc.locator('#spanNot');
+    if (tkTitle.trim() === '判断题') {
+      const optionLiLocs = await tkTopicLoc
         .locator('.ans-videoquiz-opt')
         .all();
-      for (const optionLoc of optionLis) {
-        const option = optionLoc.locator(
+      for (const optionLiLoc of optionLiLocs) {
+        const option = optionLiLoc.locator(
           `input[name="ans-videoquiz-opt"]`,
         );
         await option.click();
-        await submitButton.click();
-        await waitForRandomTime(2000);
+        await submitButtonLoc.click();
         const spanNotCount = await spanNotLoc.count();
         if (!spanNotCount) {
           findTopicId = setInterval(answerQuestion, 1000);
           isInTopicPanel = false;
           LoggerManager.Instance.info('回答正确, 继续任务');
+          const currentTime = await getCurTime();
+          resumeBar(duration, currentTime);
           break;
         }
         LoggerManager.Instance.info(
           '回答错误, 继续答题...',
         );
+      }
+    } else if (tkTitle.trim() === '多选题') {
+      const optionLiLocs = await tkTopicLoc
+        .locator('.ans-videoquiz-opt')
+        .all();
+
+      for (const choices of MULTIPLE_CHOICES) {
+        for (const choice of choices) {
+          const box = optionLiLocs[choice].locator(
+            `input[type="checkbox"][name="ans-videoquiz-opt"]`,
+          );
+          await box.check();
+        }
+        await submitButtonLoc.click();
+        const spanNotCount = await spanNotLoc.count();
+        if (!spanNotCount) {
+          LoggerManager.Instance.success(
+            '回答正确, 继续任务',
+          );
+          const currentTime = await getCurTime();
+          resumeBar(duration, currentTime);
+          findTopicId = setInterval(answerQuestion, 1000);
+          isInTopicPanel = false;
+          break;
+        }
+        LoggerManager.Instance.start(
+          `回答错误, 重新尝试...`,
+        );
+        for (const optionLiLoc of optionLiLocs) {
+          const box = optionLiLoc.locator(
+            `input[type="checkbox"][name="ans-videoquiz-opt"]`,
+          );
+          if (await box.isChecked())
+            await box.uncheck({ force: true });
+        }
       }
     }
   }

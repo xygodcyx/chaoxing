@@ -1,5 +1,6 @@
 import fs from 'fs';
-import { chromium } from 'playwright';
+import { chromium } from 'playwright-extra';
+import stealth from 'puppeteer-extra-plugin-stealth';
 import type { Browser, Page } from 'playwright';
 import 'dotenv/config';
 
@@ -24,20 +25,20 @@ import {
   EVENTS_ENUM,
 } from '../enum/index.ts';
 import { DataManager } from '../runtime/DataManager.ts';
-import { LoggerManager } from '../logs/LoggerManager.ts';
+import { LoggerManager } from '../runtime/LoggerManager.ts';
 import { CacheManager } from '../runtime/CacheManager.ts';
 
 export default class Action {
   public user: UserStatus;
 
-  public browser: Browser | null = null;
-  public page: Page | null = null;
+  public browser!: Browser;
+  public page!: Page;
 
   public courses: Array<CourseItem> = [];
-  public curCourse: CourseItem | null = null;
+  public curCourse!: CourseItem;
 
   public tasks: Array<TaskItem> = [];
-  public curTask: TaskItem | null = null;
+  public curTask!: TaskItem;
 
   constructor(user: UserStatus) {
     this.user = user;
@@ -65,6 +66,8 @@ export default class Action {
       // 登录页面单独用一个browser实例
       await enterLoginPage(phone, password);
     }
+
+    chromium.use(stealth());
 
     this.browser = await chromium.launch(config);
 
@@ -101,10 +104,12 @@ export default class Action {
         c => c.title === this.user.curCourseName,
       ) || this.courses[0];
 
+    this.updateCurCourseState();
+
     this.tasks = CacheManager.Instance.load<
       Array<TaskItem>
     >(
-      `${this.user.info.phone}-${CACHE_KEY_ENUM.TASKS}`,
+      `${this.user.info.phone}-${CACHE_KEY_ENUM.TASKS}-${this.user.curCourseName}`,
       [],
     );
 
@@ -114,7 +119,7 @@ export default class Action {
         this.curCourse,
       );
       CacheManager.Instance.save(
-        `${this.user.info.phone}-${CACHE_KEY_ENUM.TASKS}`,
+        `${this.user.info.phone}-${CACHE_KEY_ENUM.TASKS}-${this.user.curCourseName}`,
         this.tasks,
       );
     }
@@ -129,7 +134,6 @@ export default class Action {
         c => c.title === this.user.curTaskName,
       ) || this.tasks[0];
 
-    await this.updateCurCourseState();
     await this.updateCurTaskState();
 
     enterTaskPage(this.page, this.curTask);
@@ -141,6 +145,10 @@ export default class Action {
     task?: TaskItem,
   ) {
     this.tasks = await enterCoursePage(page, course);
+    CacheManager.Instance.save(
+      `${this.user.info.phone}-${CACHE_KEY_ENUM.TASKS}-${this.user.curCourseName}`,
+      this.tasks,
+    );
     if (this.tasks.length === 0) {
       LoggerManager.Instance.warn('没有任务要被执行');
       return;
@@ -152,7 +160,7 @@ export default class Action {
   onTaskDone(task: TaskItem) {
     const { page, tasks, curCourse } = this;
     LoggerManager.Instance.success(
-      `已经完成的任务： ${curCourse?.title}(${task.index}) - ${task.title}(${task.index})`,
+      `已经完成的任务： ${curCourse.title}(${curCourse.index + 1}) - ${task.title}(${task.index + 1})`,
     );
     if (task.index === tasks.length - 1) {
       LoggerManager.Instance.box(
@@ -178,10 +186,10 @@ export default class Action {
   }
 
   onCourseDone(course: CourseItem) {
-    const { browser, page, courses, curCourse } = this;
+    const { browser, page, courses } = this;
 
     LoggerManager.Instance.success(
-      `已经完成的课程： ${curCourse?.title}(${course.index})`,
+      `已经完成的课程： ${course.title}(${course.index + 1})`,
     );
     if (course.index === courses.length - 1) {
       LoggerManager.Instance.success(

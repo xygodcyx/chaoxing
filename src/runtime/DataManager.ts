@@ -13,12 +13,5 @@ export class DataManager extends Singleton {
 
   public userStatus: Record<string, UserStatus> = {};
 
-  public browser: Browser | null = null;
-  public page: Page | null = null;
-
-  public courses: Array<CourseItem> = [];
-  public curCourse: CourseItem | null = null;
-
-  public tasks: Array<TaskItem> = [];
-  public curTask: TaskItem | null = null;
+  globalId: number = 0;
 }

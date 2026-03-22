@@ -1,7 +1,7 @@
 import path from 'path';
 import Singleton from '../base/Singleton.ts';
 import { CACHE_DIR_PATH } from '../consts/index.ts';
-import { LoggerManager } from '../logs/LoggerManager.ts';
+import { LoggerManager } from './LoggerManager.ts';
 import {
   loadJsonDataForFile,
   saveJsonDataToFile,

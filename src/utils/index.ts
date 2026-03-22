@@ -1,7 +1,7 @@
 import type { Page } from 'playwright';
 import fs from 'fs/promises';
 import path from 'path';
-import { LoggerManager } from '../logs/LoggerManager.ts';
+import { LoggerManager } from '../runtime/LoggerManager.ts';
 
 export function randomInt(start: number, end: number) {
   return Math.floor(Math.random() * (end - start)) + start;

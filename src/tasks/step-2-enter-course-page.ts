@@ -9,7 +9,7 @@ import type {
   CourseItem,
   TaskItem,
 } from '../types/index.ts';
-import { LoggerManager } from '../logs/LoggerManager.ts';
+import { LoggerManager } from '../runtime/LoggerManager.ts';
 
 export async function enterCoursePage(
   page: Page,
