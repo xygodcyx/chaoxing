@@ -23,7 +23,7 @@ export async function enterPersonCenter(page: Page) {
     LoggerManager.Instance.error(`获取课程失败...`);
     return [];
   }
-  
+
   await frame.waitForLoadState('domcontentloaded');
 
   const newUrl = (await iframe?.getAttribute('src')) || '';
@@ -31,6 +31,23 @@ export async function enterPersonCenter(page: Page) {
   await page.goto(newUrl);
 
   await page.waitForLoadState('domcontentloaded');
+
+  const isOldVersion = page
+    .url()
+    .includes('mooc1-2.chaoxing.com/visit/courses/study');
+  if (isOldVersion) {
+    LoggerManager.Instance.warn(
+      '当前页面为旧版本，进入新版本页面执行任务',
+    );
+    const newVersionUrl = page
+      .url()
+      .replace(
+        'mooc1-2.chaoxing.com/visit/courses/study',
+        'mooc2-ans.chaoxing.com/mooc2-ans/visit/interaction',
+      );
+    await page.goto(newVersionUrl);
+    await page.waitForLoadState('domcontentloaded');
+  }
 
   await page.waitForSelector('#courseList');
 

@@ -1,12 +1,11 @@
 import path from 'path';
+import fs from 'fs/promises';
 import Singleton from '../base/Singleton.ts';
 import { CACHE_DIR_PATH } from '../consts/index.ts';
-import { LoggerManager } from './LoggerManager.ts';
 import {
   loadJsonDataForFile,
   saveJsonDataToFile,
 } from '../utils/index.ts';
-import { CACHE_KEY_ENUM } from '../enum/index.ts';
 
 export class CacheManager extends Singleton {
   static get Instance(): CacheManager {
@@ -18,14 +17,7 @@ export class CacheManager extends Singleton {
   private cacheMap: Map<string, unknown | null> = new Map();
 
   async init() {
-    const keys = await loadJsonDataForFile<Array<string>>(
-      path.resolve(CACHE_DIR_PATH, CACHE_KEY_ENUM.KEYS),
-      [],
-    );
-    if (!keys) {
-      return;
-    }
-    this.keys = new Set(keys);
+    await this.createKeys();
     for (const key of this.keys) {
       const data = await loadJsonDataForFile(
         `${CACHE_DIR_PATH}/${key}`,
@@ -35,17 +27,20 @@ export class CacheManager extends Singleton {
     }
   }
 
-  async addKey(key: string) {
-    this.keys.add(key);
-    await saveJsonDataToFile(
-      path.resolve(CACHE_DIR_PATH, CACHE_KEY_ENUM.KEYS),
-      Array.from(this.keys),
-    );
+  async createKeys() {
+    try {
+      const dir = await fs.opendir(
+        path.join('src', 'cache'),
+      );
+      for await (const dirent of dir)
+        this.keys.add(dirent.name);
+    } catch (err) {
+      console.error(err);
+    }
   }
 
   async save(key: string, data: unknown) {
     this.cacheMap.set(key, data);
-    await this.addKey(key);
     return await saveJsonDataToFile(
       path.resolve(CACHE_DIR_PATH, key),
       data,
