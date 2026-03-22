@@ -29,8 +29,8 @@ export async function enterTaskPage(
   page: Page,
   task: TaskItem,
 ) {
-  const id = Date.now();
-  DataManager.Instance.globalId = id;
+  const taskId = Date.now();
+  DataManager.Instance.globalTaskId = taskId;
 
   if (true && task.isFinish) {
     LoggerManager.Instance.info(
@@ -206,13 +206,13 @@ export async function enterTaskPage(
   async function retryPlayVideo(retryCount: number = 30) {
     if (
       isInTopicPanel ||
-      DataManager.Instance.globalId !== id
+      DataManager.Instance.globalTaskId !== taskId
     ) {
       return;
     }
     for (let index = 0; index < retryCount; index++) {
       const paused = await getIsPaused();
-      if (DataManager.Instance.globalId !== id) {
+      if (DataManager.Instance.globalTaskId !== taskId) {
         return;
       }
       if (!paused) {
@@ -229,11 +229,15 @@ export async function enterTaskPage(
   await retryPlayVideo(3);
 
   page.on('console', async msg => {
-    if (DataManager.Instance.globalId !== id) {
+    let timeId: NodeJS.Timeout | null = null;
+    if (DataManager.Instance.globalTaskId !== taskId) {
       return;
     }
     if (msg.text() === 'VIDEO_PAUSED') {
-      await retryPlayVideo();
+      if (timeId) clearInterval(timeId);
+      timeId = setTimeout(async () => {
+        await retryPlayVideo();
+      }, 2000);
     } else if (msg.text() === 'VIDEO_PLAYED') {
     }
   });
@@ -276,7 +280,7 @@ export async function enterTaskPage(
 
   const timeUpdateId = setInterval(async () => {
     const time = await getCurTime();
-    if (DataManager.Instance.globalId !== id) {
+    if (DataManager.Instance.globalTaskId !== taskId) {
       clearInterval(timeUpdateId);
       bar.stop();
       return;
@@ -317,7 +321,7 @@ export async function enterTaskPage(
 
   let findTopicId = setInterval(answerQuestion, 1000);
   async function answerQuestion() {
-    if (DataManager.Instance.globalId !== id) {
+    if (DataManager.Instance.globalTaskId !== taskId) {
       clearInterval(findTopicId);
       clearInterval(timeUpdateId);
       return;
