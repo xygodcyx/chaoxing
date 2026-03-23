@@ -1,29 +1,36 @@
 import path from 'path';
 import os from 'os';
 
-const DIR_BASE_URL =
+export const DIR_BASE_URL =
   process.env.NODE_ENV === 'production' ? os.homedir() : '';
 
-export const LOGGER_DIR_PATH = path.resolve(
+export const CHAOXING_DIR_URL = path.resolve(
   DIR_BASE_URL,
   '.chaoxing',
+);
+
+export const ENV_FILE_PATH = path.resolve(
+  CHAOXING_DIR_URL,
+  '.env',
+);
+
+export const LOGGER_DIR_PATH = path.resolve(
+  CHAOXING_DIR_URL,
   'logs',
 );
 
 export const CACHE_DIR_PATH = path.resolve(
-  DIR_BASE_URL,
-  '.chaoxing',
+  CHAOXING_DIR_URL,
   'cache',
 );
 
-export const AUTH_FILE_BASE_PATH = path.resolve(
-  DIR_BASE_URL,
-  '.chaoxing',
-  'playwright',
-  '.auth',
+export const AUTH_DIR_PATH = path.resolve(
+  CHAOXING_DIR_URL,
+  'auth',
 );
 
 export const BASE_URL = 'https://mooc2-ans.chaoxing.com';
+
 export const BASE_VERSION_ONE_URL =
   'https://mooc1.chaoxing.com';
 

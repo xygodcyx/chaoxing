@@ -1,29 +1,28 @@
 import fs from 'fs';
+import path from 'path';
+import type { Browser, Page } from 'playwright';
+
 import { chromium } from 'playwright-extra';
 import stealth from 'puppeteer-extra-plugin-stealth';
-import type { Browser, Page } from 'playwright';
-import 'dotenv/config';
 
 import { enterPersonCenter } from '../tasks/step-1-enter-person-center-page';
 import { enterCoursePage } from '../tasks/step-2-enter-course-page';
 import type {
   CourseItem,
   TaskItem,
-  UserInfo,
   UserStatus,
 } from '../types/index';
 
-import { enterLoginPage } from '../tasks/step-0-enter-login-page';
-import { AUTH_FILE_BASE_PATH } from '../consts/index';
+import { CHAOXING_DIR_URL } from '../consts/index';
 import { enterTaskPage } from '../tasks/step-3-enter-task-page';
 
-import config from '../config/index';
 import EventManager from '../runtime/EventManager';
 
 import { CACHE_KEY_ENUM, EVENTS_ENUM } from '../enum/index';
 import { DataManager } from '../runtime/DataManager';
 import { LoggerManager } from '../runtime/LoggerManager';
 import { CacheManager } from '../runtime/CacheManager';
+import { ConfigManager } from '../runtime/ConfigManager';
 
 export default class Action {
   public user: UserStatus;
@@ -57,10 +56,16 @@ export default class Action {
       info: { phone },
     } = this.user;
 
-    const authPath = `${AUTH_FILE_BASE_PATH}/user-${phone}.json`;
+    const authPath = path.resolve(
+      `${CHAOXING_DIR_URL}`,
+      phone,
+      'auth',
+      'user.json',
+    );
+
+    await CacheManager.Instance.init(phone);
 
     if (!fs.existsSync(authPath)) {
-      // 登录页面单独用一个browser实例
       LoggerManager.Instance.error(
         '请先运行pnpm start login进行登录',
       );
@@ -69,7 +74,9 @@ export default class Action {
 
     chromium.use(stealth());
 
-    this.browser = await chromium.launch(config);
+    this.browser = await chromium.launch(
+      ConfigManager.Instance.launchOption,
+    );
 
     const context = await this.browser.newContext({
       storageState: authPath,
@@ -80,14 +87,11 @@ export default class Action {
     // 进入个人中心
     this.courses = CacheManager.Instance.load<
       Array<CourseItem>
-    >(
-      `${this.user.info.phone}-${CACHE_KEY_ENUM.COURSES}`,
-      [],
-    );
+    >(`${CACHE_KEY_ENUM.COURSES}`, []);
     if (this.courses.length === 0) {
       this.courses = await enterPersonCenter(this.page);
       CacheManager.Instance.save(
-        `${this.user.info.phone}-${CACHE_KEY_ENUM.COURSES}`,
+        `${CACHE_KEY_ENUM.COURSES}`,
         this.courses,
       );
     }
@@ -109,7 +113,7 @@ export default class Action {
     this.tasks = CacheManager.Instance.load<
       Array<TaskItem>
     >(
-      `${this.user.info.phone}-${CACHE_KEY_ENUM.TASKS}-${this.user.curCourseName}`,
+      `${CACHE_KEY_ENUM.TASKS}-${this.user.curCourseName}`,
       [],
     );
 
@@ -119,7 +123,7 @@ export default class Action {
         this.curCourse,
       );
       CacheManager.Instance.save(
-        `${this.user.info.phone}-${CACHE_KEY_ENUM.TASKS}-${this.user.curCourseName}`,
+        `${CACHE_KEY_ENUM.TASKS}-${this.user.curCourseName}`,
         this.tasks,
       );
     }
@@ -146,7 +150,7 @@ export default class Action {
   ) {
     this.tasks = await enterCoursePage(page, course);
     CacheManager.Instance.save(
-      `${this.user.info.phone}-${CACHE_KEY_ENUM.TASKS}-${this.user.curCourseName}`,
+      `${CACHE_KEY_ENUM.TASKS}-${this.user.curCourseName}`,
       this.tasks,
     );
     if (this.tasks.length === 0) {
@@ -218,7 +222,7 @@ export default class Action {
       this.curCourse?.title;
 
     await CacheManager.Instance.save(
-      `${this.user.info.phone}-${CACHE_KEY_ENUM.USER_STATUS}`,
+      `${CACHE_KEY_ENUM.USER_STATUS}`,
       DataManager.Instance.userStatus,
     );
   }
@@ -230,7 +234,7 @@ export default class Action {
       this.curTask?.title;
 
     await CacheManager.Instance.save(
-      `${this.user.info.phone}-${CACHE_KEY_ENUM.USER_STATUS}`,
+      `${CACHE_KEY_ENUM.USER_STATUS}`,
       DataManager.Instance.userStatus,
     );
   }

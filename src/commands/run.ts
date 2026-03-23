@@ -1,6 +1,7 @@
 import Action from '../action/Action';
 import { CACHE_KEY_ENUM } from '../enum/index';
 import { CacheManager } from '../runtime/CacheManager';
+import { ConfigManager } from '../runtime/ConfigManager';
 import { DataManager } from '../runtime/DataManager';
 import { LoggerManager } from '../runtime/LoggerManager';
 import type {
@@ -11,13 +12,13 @@ import type {
 
 import { registerCommand } from './index';
 
-function initUserStatus(
+export function initUserStatus(
   commandUser: CommandUserInfo = {
     phone: '',
   },
 ) {
   const cacheUser = CacheManager.Instance.load<UserStatus>(
-    `${commandUser.phone}-${CACHE_KEY_ENUM.USER_STATUS}`,
+    `${CACHE_KEY_ENUM.USER_STATUS}`,
     {
       info: {
         phone: '',
@@ -37,7 +38,7 @@ function initUserStatus(
     curCourseName:
       commandUser.course ||
       cacheUser.curCourseName ||
-      process.env.CROUSE ||
+      process.env.COURSE ||
       '',
     curTaskName:
       commandUser.task ||
@@ -70,16 +71,28 @@ export function registerRunCommand() {
         type: 'string',
         description: '要刷的章节, 留空从第一个开始刷',
       },
+      {
+        short: 's',
+        long: 'show',
+        type: '',
+        description:
+          '启动图形化浏览器，查看实时运行状态（需要图形化操作系统）',
+      },
     ],
     async str => {
       const phone = str.phone;
       const course = str.course;
       const task = str.task;
+      const show = str.show;
+
+      ConfigManager.Instance.launchOption.headless = !show;
+
       initUserStatus({
         phone,
         course,
         task,
       });
+
       const action = new Action(
         DataManager.Instance.userStatus,
       );

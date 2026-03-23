@@ -1,119 +1,86 @@
-# chaoxing (基于 Playwright 的自动化刷课工具)
+# 🚀 Chaoxing
 
+[![Author](https://img.shields.io/badge/author-xygodcyx-orange)](https://github.com/xygodcyx)
 [![License: CC BY-NC-SA 4.0](https://img.shields.io/badge/License-CC%20BY--NC--SA%204.0-lightgrey.svg)](https://creativecommons.org/licenses/by-nc-sa/4.0/)
+[![NPM Version](https://img.shields.io/npm/v/chaoxing)](https://www.npmjs.com/package/chaoxing)
 
-> **注意：本项目严禁任何形式的商业用途，违者必究。**
-
-## 本项目采用 CC BY-NC-SA 4.0 许可协议，仅供学习交流使用，严禁用于任何商业用途（包括但不限于收费代挂、二次售卖等）。由使用本工具产生的任何法律纠纷由使用者本人承担，作者概不负责
-
->**这是一个基于 Playwright 开发的自动化课程学习辅助工具，支持多任务进度追踪、缓存管理以及 CLI 命令行交互。**
+> **⚠️ 严正声明**：本项目由 **xygodcyx** 原创开发，仅供技术学习。**严禁商业用途**。使用者需自行承担账号风险及法律责任。
 
 ---
 
-## 🚀 功能特性
+## ✨ 功能特性
 
-* **自动化登录**：支持手机号/密码登录并持久化存储状态。
-* **任务进度追踪**：使用 `cli-progress` 和 `Listr2` 提供直观的进度展示。
-* **智能缓存管理**：支持按用户清除缓存，节省磁盘空间。
-* **灵活的命令控制**：支持单用户模式、断点续刷等功能。
-
----
-
-## 📦 安装与准备
-
-1. **克隆项目并安装依赖**
-
-   ```bash
-   pnpm install
-   ```
-
-1. **安装浏览器内核**
-
-   ```bash
-   npx playwright install chromium
-   ```
-
-1. **环境变量配置 (可选)**
-   在项目根目录创建 `.env` 文件：
-
-   ```env
-   PHONE=你的手机号
-   PASSWORD=你的密码
-   CROUSE="要刷的课程(可选)"
-   TASK="要刷的章节(可选)"
-   ```
+* **全自动化执行**：支持登录状态持久化，避免频繁验证。
+* **可视化进度**：清晰的任务进度条，实时掌握刷课动态。
+* **图形化调试**：支持通过 `-s` 参数唤起浏览器界面，直观观察运行过程。
+* **智能配置系统**：基于**就近原则**加载 `.env`，并支持命令行参数实时覆盖。
 
 ---
 
-## 🛠 命令行指令 (CLI)
+## 🔐 配置优先级与 `.env`
 
-### 1. 登录 (Login)
+工具通过 `ConfigManager` 和环境变量共同管理配置。你可以通过创建 `.env` 文件简化操作：
 
-用于初始化用户登录状态，获取必要的 Cookie。
+### 1. 优先级规则
 
-* **命令**: `login`
-* **参数**:
-  * `-p, --phone`: 手机号（可选，默认读取环境变量）
-  * `-pw, --password`: 密码（可选，默认读取环境变量）
-* **示例**:
+当参数冲突时，程序按以下顺序采纳（由高到低）：
 
-    ```bash
-    chaoxing login -p 88888888 -pw 123456
-    ```
+1. **Command Line** (终端输入的 `-p`, `-w`, `-s` 等)
+2. **Local Cache** (仅 `run` 命令会回退到上一次的进度记录)
+3. **Local `.env`** (执行目录下的 `.env`)
+4. **Global `.env`** (`~/.chaoxing/.env`)
 
-### 2. 执行任务 (Run)
+### 2. `.env` 配置示例
 
-按指定的课程或章节开始自动化刷课。
-
-* **命令**: `run`
-* **参数**:
-  * `-p, --phone`: **(必填)** 用户手机号
-  * `-c, --course`: 要刷的课程名称（留空则从第一个开始）
-  * `-t, --task`: 要刷的章节/任务名称（留空则从第一个开始）
-* **示例**:
-
-    ```bash
-    # 从指定课程开始
-    chaoxing run -p 88888888 -c "高等数学"
-    ```
-
-### 3. 清除缓存 (Clear)
-
-清理 `cache`中的缓存文件。
-
-* **命令**: `clear`
-* **参数**:
-  * `-p, --phone`: 清除指定手机号相关的缓存文件
-  * `-a, --all`: 指定该参数时清除 **所有** 缓存
-* **示例**:
-
-    ```bash
-    # 清除特定用户缓存
-    chaoxing clear -p 88888888
-    # 清除所有缓存并释放空间
-    chaoxing clear --all
-    ```
+```env
+PHONE=138xxxxxxxx
+PASSWORD=your_password
+COURSE=高等数学
+TASK=第一章
+```
 
 ---
 
-## 📂 目录结构规范
+## 🛠 命令行交互 (CLI)
 
-* `src/action`: 核心业务逻辑执行器
-* `src/commands`: 命令行注册定义
-* `src/runtime`: 运行时状态管理 (DataManager, CacheManager, LoggerManager)
-* `src/tasks`: 具体的 Playwright 步骤拆解
-* `src/utils`: 工具函数（如字节格式化等）
+### 1. 登录初始化 `login`
+
+首次使用或状态失效时执行。
+
+| 参数 | 缩写 | 类型 | 描述 |
+| :--- | :--- | :--- | :--- |
+| `--phone` | `-p` | string | 手机号 |
+| `--password` | **`-w`** | string | 登录密码 |
+| `--show` | `-s` | boolean | **显示浏览器界面**（调试验证码必用） |
+
+### 2. 开始任务 `run`
+
+执行核心刷课逻辑。
+
+| 参数 | 缩写 | 类型 | 描述 |
+| :--- | :--- | :--- | :--- |
+| `--phone` | `-p` | string | 指定手机号 |
+| `--course` | `-c` | string | 课程名（留空则读取进度或首门） |
+| `--task` | `-t` | string | 章节名（留空则从断点或首节开始） |
+| `--show` | `-s` | boolean | **可视化运行** |
+
+### 3. 辅助指令
+
+* **`chaoxing where`**: 快速查看工具的运行根目录。
+* **`chaoxing clear`**: 清理缓存。使用 `-a` 清空全部，使用 `-p <phone>` 清除指定账号。
 
 ---
 
-## ⚠️ 注意事项
+## ⚠️ 避坑指南
 
-* **人机验证**: 若遇到 Cloudflare 或复杂的验证码，请在非 Headless 模式下手动辅助完成。
-* **多用户隔离**: 每个用户的缓存和日志将通过手机号进行区分，确保数据互不干扰。
-* **网络延迟**: 建议在网络环境稳定的情况下使用，以免触发 Playwright 的超时报错。
+1. **验证码处理**：超星触发滑块验证时，请务必带上 `-s` 参数运行，在弹出的浏览器窗口中手动完成验证。
+2. **多账号管理**：程序会根据手机号在 `~/.chaoxing/` 下生成独立的子目录，互不干扰。
+3. **环境要求**：使用 `-s` 模式需要具有图形界面的操作系统（Windows/macOS 或已配置 X11 的 Linux）。在纯 CLI 服务器上建议保持默认 Headless 模式。
 
 ---
 
-## 📄 开源协议
+## 📄 许可协议
 
-MIT
+本项目采用 [CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/) 协议发布。
+
+**Copyright (c) 2026 xygodcyx.**

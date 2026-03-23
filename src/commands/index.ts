@@ -4,6 +4,7 @@ import type { Option } from 'commander';
 import { registerRunCommand } from './run';
 import { registerClearCommand } from './clear';
 import { registerLoginCommand } from './login';
+import { registerWhereCommand } from './where';
 
 function initCommandInfo() {
   program
@@ -29,7 +30,7 @@ export function registerCommand<T>(
   command.description(description);
   commandList.forEach(item => {
     command.option(
-      `--${item.short} --${item.long} <${item.type}>`,
+      `-${item.short} --${item.long} ${item.type ? `<${item.type}>` : ''} `,
       item.description,
     );
   });
@@ -42,6 +43,7 @@ export function registerAllCommand() {
   registerLoginCommand();
   registerRunCommand();
   registerClearCommand();
+  registerWhereCommand();
 
   program.parse();
 }

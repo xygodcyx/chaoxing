@@ -1,18 +1,21 @@
 // save-auth
 import { chromium } from 'playwright';
 import path from 'path';
-import { AUTH_FILE_BASE_PATH } from '../consts/index';
+import { CHAOXING_DIR_URL } from '../consts/index';
 import { LoggerManager } from '../runtime/LoggerManager';
-import config from '../config/index';
+import { ConfigManager } from '../runtime/ConfigManager';
 
 export async function enterLoginPage(
   phone: string,
   password: string,
 ) {
-  const authFile = path.join(
-    `${AUTH_FILE_BASE_PATH}/user-${phone}.json`,
+  const authPath = path.resolve(
+    `${CHAOXING_DIR_URL}`,
+    phone,
+    'auth',
+    'user.json',
   );
-  const browser = await chromium.launch(config);
+  const browser = await chromium.launch(ConfigManager.Instance.launchOption);
   const context = await browser.newContext({
     userAgent:
       'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36',
@@ -39,13 +42,15 @@ export async function enterLoginPage(
     );
 
     // End of authentication steps.
-    LoggerManager.Instance.info(
+    LoggerManager.Instance.start(
       '登录成功，正在保存会话状态...',
     );
 
-    await page.context().storageState({ path: authFile });
+    await page.context().storageState({ path: authPath });
 
-    LoggerManager.Instance.info(`状态已保存到 ${authFile}`);
+    LoggerManager.Instance.success(
+      `状态已保存到 ${authPath}`,
+    );
   } catch (error: any) {
     LoggerManager.Instance.error(
       `登录失败: ${error.message}`,

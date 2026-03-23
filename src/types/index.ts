@@ -35,14 +35,16 @@ export interface CommandRun {
   phone: string;
   course: string;
   task: string;
+  show: boolean;
 }
 
 export interface CommandClear {
   phone: string;
-  all: string;
+  all: boolean;
 }
 
 export interface CommandLogin {
   phone: string;
   password: string;
+  show: boolean;
 }

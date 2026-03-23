@@ -1,12 +1,17 @@
 import fs from 'fs/promises';
+import path from 'path';
 
 import { registerCommand } from './index';
 import type { CommandClear } from '../types/index';
-import { CACHE_DIR_PATH } from '../consts/index';
-import path from 'path';
+import { CHAOXING_DIR_URL } from '../consts/index';
 import { LoggerManager } from '../runtime/LoggerManager';
 import { formatBytes } from '../utils/index';
+import type { Dirent, Stats } from 'fs';
 
+interface DeleteItem {
+  dirent: Dirent<string>;
+  stats: Stats;
+}
 export function registerClearCommand() {
   registerCommand<CommandClear>(
     'clear',
@@ -16,36 +21,42 @@ export function registerClearCommand() {
         short: 'p',
         long: 'phone',
         type: 'string',
-        description: '要清楚用户缓存的手机号',
+        description: '要清除用户缓存的手机号',
       },
       {
         short: 'a',
         long: 'all',
-        type: 'string',
+        type: '',
         description: '指定该参数时清除所有用户的缓存',
       },
     ],
     async str => {
       const phone = str.phone;
-      const dirs = await fs.opendir(CACHE_DIR_PATH);
-      const deletedList = [];
-      for await (const dirent of dirs) {
-        if (
-          (dirent.name.includes(phone) || str.all) &&
-          dirent.isFile()
-        ) {
-          const stats = await fs.stat(
-            path.join(CACHE_DIR_PATH, dirent.name),
-          );
-          fs.unlink(path.join(CACHE_DIR_PATH, dirent.name));
-          deletedList.push({ dirent, stats });
-        }
+      const deletedList: Array<DeleteItem> = [];
+      if (str.phone && !str.all) {
+        const cacheDirPath = path.resolve(
+          CHAOXING_DIR_URL,
+          phone,
+          'cache',
+        );
+        const list = await deleteCacheForDir(cacheDirPath);
+        deletedList.push(...list);
+      } else if (str.all && !str.phone) {
+        const list = await findAllCacheDirAndDelete(
+          CHAOXING_DIR_URL,
+        );
+        deletedList.push(...list);
+      } else if (str.phone && str.all) {
+        LoggerManager.Instance.error(
+          '不能同时指定phone和all参数, 请任选其一',
+        );
+        return;
       }
       let allSize = 0;
       deletedList.forEach(async f => {
         allSize += f.stats.size;
         LoggerManager.Instance.info(
-          `删除文件: ${f.dirent.name} (${formatBytes(f.stats.size)})`,
+          `删除文件${f.dirent.name} : ${path.join(f.dirent.parentPath, f.dirent.name)} (${formatBytes(f.stats.size)})`,
         );
       });
       LoggerManager.Instance.success(
@@ -53,4 +64,43 @@ export function registerClearCommand() {
       );
     },
   );
+}
+
+async function deleteCacheForDir(dir: string) {
+  const deletedList: Array<DeleteItem> = [];
+  const dirs = await fs.opendir(dir);
+  for await (const dirent of dirs) {
+    if (dirent.isFile()) {
+      const stats = await fs.stat(
+        path.join(dir, dirent.name),
+      );
+      fs.unlink(path.join(dir, dirent.name));
+      deletedList.push({ dirent, stats });
+    }
+  }
+  return deletedList;
+}
+
+async function findAllCacheDirAndDelete(
+  baseDir: string,
+  deletedList: Array<DeleteItem> = [],
+) {
+  const dirs = await fs.opendir(baseDir);
+  for await (const dirent of dirs) {
+    const isDir = dirent.isDirectory();
+    const name = dirent.name;
+    if (!isDir) continue;
+    if (name === 'cache') {
+      const list = await deleteCacheForDir(
+        path.resolve(baseDir, 'cache'),
+      );
+      deletedList.push(...list);
+    } else {
+      await findAllCacheDirAndDelete(
+        path.resolve(baseDir, dirent.name),
+        deletedList,
+      );
+    }
+  }
+  return deletedList;
 }

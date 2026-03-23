@@ -1,7 +1,7 @@
 import path from 'path';
 import fs from 'fs/promises';
 import Singleton from '../base/Singleton';
-import { CACHE_DIR_PATH } from '../consts';
+import { CHAOXING_DIR_URL } from '../consts';
 import {
   loadJsonDataForFile,
   saveJsonDataToFile,
@@ -12,37 +12,46 @@ export class CacheManager extends Singleton {
     return super.GetInstance<CacheManager>();
   }
 
-  private keys: Set<string> = new Set();
-
   private cacheMap: Map<string, unknown | null> = new Map();
 
-  async init() {
-    await this.createKeys();
-    for (const key of this.keys) {
+  private _activeCacheDir = path.resolve(CHAOXING_DIR_URL);
+
+  public get activeCacheDir() {
+    return this._activeCacheDir;
+  }
+
+  public set activeCacheDir(value) {
+    this._activeCacheDir = value;
+  }
+
+  async init(phone: string) {
+    await this.reLinkCacheDirPath(phone);
+    const dir = await fs.opendir(this.activeCacheDir);
+    for await (const dirent of dir) {
       const data = await loadJsonDataForFile(
-        `${CACHE_DIR_PATH}/${key}`,
+        `${this.activeCacheDir}/${dirent.name}`,
         null,
       );
-      this.cacheMap.set(key, data);
+      this.cacheMap.set(dirent.name, data);
     }
   }
 
-  async createKeys() {
-    try {
-      const dir = await fs.opendir(
-        path.join(CACHE_DIR_PATH),
-      );
-      for await (const dirent of dir)
-        this.keys.add(dirent.name);
-    } catch (err) {
-      console.error(err);
-    }
+  async reLinkCacheDirPath(phone: string) {
+    this.activeCacheDir = path.join(
+      CHAOXING_DIR_URL,
+      phone,
+      'cache',
+    );
+    await fs.mkdir(this.activeCacheDir, {
+      recursive: true,
+    });
+    return this.activeCacheDir;
   }
 
   async save(key: string, data: unknown) {
     this.cacheMap.set(key, data);
     return await saveJsonDataToFile(
-      path.resolve(CACHE_DIR_PATH, key),
+      path.resolve(this.activeCacheDir, key),
       data,
     );
   }

@@ -1,5 +1,7 @@
 import Singleton from '../base/Singleton';
-import { LOGGER_DIR_PATH } from '../consts/index';
+import {
+  CHAOXING_DIR_URL,
+} from '../consts/index';
 import {
   LOG_LEVEL_ENUM,
   type LOG_LEVEL,
@@ -22,10 +24,15 @@ export class LoggerManager extends Singleton {
   ) {
     const date = new Date();
     const { phone } = DataManager.Instance.userStatus.info;
-    const logStr = `${phone} -- ${date.toLocaleDateString()} - ${date.toLocaleTimeString()} [${level}] ${msg}\r\n`;
-    consola[level](`${phone} -- ${msg}`, ...params);
+    const logStr = `${date.toLocaleDateString()} - ${date.toLocaleTimeString()} [${level}] ${msg}\r\n`;
+    consola[level](`${msg}`, ...params);
     await appendStringToFile(
-      path.join(LOGGER_DIR_PATH, `${phone}.log`),
+      path.join(
+        CHAOXING_DIR_URL,
+        phone,
+        'logs',
+        'index.log',
+      ),
       logStr,
     );
   }
