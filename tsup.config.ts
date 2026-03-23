@@ -10,6 +10,15 @@ export default defineConfig({
     'process.env.NODE_ENV': JSON.stringify('production'),
   },
   banner: {
-    js: '#!/usr/bin/env node',
+      js: `#!/usr/bin/env node
+    
+/**
+ * @project chaoxing
+ * @author xygodcyx
+ * @license CC BY-NC-SA 4.0
+ * @prohibit Commercial use is strictly prohibited.
+ * @description 本工具由 xygodcyx 原创，仅供学习交流，严禁任何形式的商业牟利。
+ * @see https://github.com/xygodcyx/chaoxing
+ */`,
   },
 });

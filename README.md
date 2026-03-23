@@ -1,6 +1,12 @@
 # chaoxing (基于 Playwright 的自动化刷课工具)
 
-这是一个基于 Playwright 开发的自动化课程学习辅助工具，支持多任务进度追踪、缓存管理以及 CLI 命令行交互。
+[![License: CC BY-NC-SA 4.0](https://img.shields.io/badge/License-CC%20BY--NC--SA%204.0-lightgrey.svg)](https://creativecommons.org/licenses/by-nc-sa/4.0/)
+
+> **注意：本项目严禁任何形式的商业用途，违者必究。**
+
+## 本项目采用 CC BY-NC-SA 4.0 许可协议，仅供学习交流使用，严禁用于任何商业用途（包括但不限于收费代挂、二次售卖等）。由使用本工具产生的任何法律纠纷由使用者本人承担，作者概不负责
+
+>**这是一个基于 Playwright 开发的自动化课程学习辅助工具，支持多任务进度追踪、缓存管理以及 CLI 命令行交互。**
 
 ---
 
