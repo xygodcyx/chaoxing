@@ -17,17 +17,32 @@ export interface TaskItem {
 
 export interface UserInfo {
   phone: string;
-  password: string;
 }
-export interface UserEnvInfo {
+export interface EnvUserInfo {
   phone: string;
-  password: string;
   course?: string;
   task?: string;
 }
+export interface CommandUserInfo extends EnvUserInfo {}
 
 export interface UserStatus {
   info: UserInfo;
   curCourseName?: string;
   curTaskName?: string;
+}
+
+export interface CommandRun {
+  phone: string;
+  course: string;
+  task: string;
+}
+
+export interface CommandClear {
+  phone: string;
+  all: string;
+}
+
+export interface CommandLogin {
+  phone: string;
+  password: string;
 }

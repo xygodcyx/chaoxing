@@ -1,11 +1,11 @@
 import path from 'path';
 import fs from 'fs/promises';
-import Singleton from '../base/Singleton.ts';
-import { CACHE_DIR_PATH } from '../consts/index.ts';
+import Singleton from '../base/Singleton';
+import { CACHE_DIR_PATH } from '../consts';
 import {
   loadJsonDataForFile,
   saveJsonDataToFile,
-} from '../utils/index.ts';
+} from '../utils/index';
 
 export class CacheManager extends Singleton {
   static get Instance(): CacheManager {
@@ -30,7 +30,7 @@ export class CacheManager extends Singleton {
   async createKeys() {
     try {
       const dir = await fs.opendir(
-        path.join('src', 'cache'),
+        path.join(CACHE_DIR_PATH),
       );
       for await (const dirent of dir)
         this.keys.add(dirent.name);

@@ -1,4 +1,4 @@
-import Singleton from '../base/Singleton.ts';
+import Singleton from '../base/Singleton';
 
 interface IItem {
   func: Function;

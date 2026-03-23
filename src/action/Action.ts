@@ -4,29 +4,26 @@ import stealth from 'puppeteer-extra-plugin-stealth';
 import type { Browser, Page } from 'playwright';
 import 'dotenv/config';
 
-import { enterPersonCenter } from '../tasks/step-1-enter-person-center-page.ts';
-import { enterCoursePage } from '../tasks/step-2-enter-course-page.ts';
+import { enterPersonCenter } from '../tasks/step-1-enter-person-center-page';
+import { enterCoursePage } from '../tasks/step-2-enter-course-page';
 import type {
   CourseItem,
   TaskItem,
   UserInfo,
   UserStatus,
-} from '../types/index.ts';
+} from '../types/index';
 
-import { enterLoginPage } from '../tasks/step-0-enter-login-page.ts';
-import { AUTH_FILE_BASE_PATH } from '../consts/index.ts';
-import { enterTaskPage } from '../tasks/step-3-enter-task-page.ts';
+import { enterLoginPage } from '../tasks/step-0-enter-login-page';
+import { AUTH_FILE_BASE_PATH } from '../consts/index';
+import { enterTaskPage } from '../tasks/step-3-enter-task-page';
 
-import config from '../config/index.ts';
-import EventManager from '../runtime/EventManager.ts';
+import config from '../config/index';
+import EventManager from '../runtime/EventManager';
 
-import {
-  CACHE_KEY_ENUM,
-  EVENTS_ENUM,
-} from '../enum/index.ts';
-import { DataManager } from '../runtime/DataManager.ts';
-import { LoggerManager } from '../runtime/LoggerManager.ts';
-import { CacheManager } from '../runtime/CacheManager.ts';
+import { CACHE_KEY_ENUM, EVENTS_ENUM } from '../enum/index';
+import { DataManager } from '../runtime/DataManager';
+import { LoggerManager } from '../runtime/LoggerManager';
+import { CacheManager } from '../runtime/CacheManager';
 
 export default class Action {
   public user: UserStatus;
@@ -57,14 +54,17 @@ export default class Action {
       this,
     );
     const {
-      info: { phone, password },
+      info: { phone },
     } = this.user;
 
     const authPath = `${AUTH_FILE_BASE_PATH}/user-${phone}.json`;
 
     if (!fs.existsSync(authPath)) {
       // 登录页面单独用一个browser实例
-      await enterLoginPage(phone, password);
+      LoggerManager.Instance.error(
+        '请先运行pnpm start login进行登录',
+      );
+      return;
     }
 
     chromium.use(stealth());
@@ -213,23 +213,24 @@ export default class Action {
 
   async updateCurCourseState() {
     this.user.curCourseName = this.curCourse?.title;
-    DataManager.Instance.userStatus[
-      this.user.info.phone
-    ].curCourseName = this.curCourse?.title;
+
+    DataManager.Instance.userStatus.curCourseName =
+      this.curCourse?.title;
+
     await CacheManager.Instance.save(
-      CACHE_KEY_ENUM.USER_STATUS,
+      `${this.user.info.phone}-${CACHE_KEY_ENUM.USER_STATUS}`,
       DataManager.Instance.userStatus,
     );
   }
 
   async updateCurTaskState() {
     this.user.curTaskName = this.curTask?.title;
-    DataManager.Instance.userStatus[
-      this.user.info.phone
-    ].curTaskName = this.curTask?.title;
+
+    DataManager.Instance.userStatus.curTaskName =
+      this.curTask?.title;
 
     await CacheManager.Instance.save(
-      CACHE_KEY_ENUM.USER_STATUS,
+      `${this.user.info.phone}-${CACHE_KEY_ENUM.USER_STATUS}`,
       DataManager.Instance.userStatus,
     );
   }

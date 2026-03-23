@@ -2,21 +2,20 @@ import cliProgress from 'cli-progress';
 import colors from 'ansi-colors';
 
 import type { Page } from 'playwright';
-import { DataManager } from '../runtime/DataManager.ts';
+import { DataManager } from '../runtime/DataManager';
 import {
   waitForRandomTime,
   waitForTime,
-} from '../utils/index.ts';
-import type { TaskItem, UserInfo } from '../types/index.ts';
+} from '../utils/index';
+import type { TaskItem, UserInfo } from '../types/index';
 import {
   BASE_READ_URL,
   BASE_TASK_URL,
   MULTIPLE_CHOICE as MULTIPLE_CHOICES,
-} from '../consts/index.ts';
-import EventManager from '../runtime/EventManager.ts';
-import { EVENTS_ENUM } from '../enum/index.ts';
-import { LoggerManager } from '../runtime/LoggerManager.ts';
-import consola from 'consola';
+} from '../consts/index';
+import EventManager from '../runtime/EventManager';
+import { EVENTS_ENUM } from '../enum/index';
+import { LoggerManager } from '../runtime/LoggerManager';
 
 /**
  * 章节任务的几种情况：
@@ -31,8 +30,7 @@ export async function enterTaskPage(
   userInfo: UserInfo,
 ) {
   const taskId = Date.now();
-  DataManager.Instance.globalTaskId[userInfo.phone] =
-    taskId;
+  DataManager.Instance.globalTaskId = taskId;
 
   if (true && task.isFinish) {
     LoggerManager.Instance.info(
@@ -198,9 +196,12 @@ export async function enterTaskPage(
   if (true) {
     await frameLoc
       .locator('video')
-      .evaluate(async (video: HTMLVideoElement) => {
-        video.currentTime = duration - 1;
-      });
+      .evaluate(
+        async (video: HTMLVideoElement, d: number) => {
+          video.currentTime = d - 1;
+        },
+        duration,
+      );
   }
 
   let isInTopicPanel = false;
@@ -208,18 +209,13 @@ export async function enterTaskPage(
   async function retryPlayVideo(retryCount: number = 30) {
     if (
       isInTopicPanel ||
-      DataManager.Instance.globalTaskId[userInfo.phone] !==
-        taskId
+      DataManager.Instance.globalTaskId !== taskId
     ) {
       return;
     }
     for (let index = 0; index < retryCount; index++) {
       const paused = await getIsPaused();
-      if (
-        DataManager.Instance.globalTaskId[
-          userInfo.phone
-        ] !== taskId
-      ) {
+      if (DataManager.Instance.globalTaskId !== taskId) {
         return;
       }
       if (!paused) {
@@ -237,10 +233,7 @@ export async function enterTaskPage(
 
   page.on('console', async msg => {
     let timeId: NodeJS.Timeout | null = null;
-    if (
-      DataManager.Instance.globalTaskId[userInfo.phone] !==
-      taskId
-    ) {
+    if (DataManager.Instance.globalTaskId !== taskId) {
       return;
     }
     if (msg.text() === 'VIDEO_PAUSED') {
@@ -290,10 +283,7 @@ export async function enterTaskPage(
 
   const timeUpdateId = setInterval(async () => {
     const time = await getCurTime();
-    if (
-      DataManager.Instance.globalTaskId[userInfo.phone] !==
-      taskId
-    ) {
+    if (DataManager.Instance.globalTaskId !== taskId) {
       clearInterval(timeUpdateId);
       bar.stop();
       return;
@@ -334,10 +324,7 @@ export async function enterTaskPage(
 
   let findTopicId = setInterval(answerQuestion, 1000);
   async function answerQuestion() {
-    if (
-      DataManager.Instance.globalTaskId[userInfo.phone] !==
-      taskId
-    ) {
+    if (DataManager.Instance.globalTaskId !== taskId) {
       clearInterval(findTopicId);
       clearInterval(timeUpdateId);
       return;

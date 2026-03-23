@@ -1,6 +1,6 @@
 import type { Page } from 'playwright';
-import type { CourseItem } from '../types/index.ts';
-import { LoggerManager } from '../runtime/LoggerManager.ts';
+import type { CourseItem } from '../types/index';
+import { LoggerManager } from '../runtime/LoggerManager';
 
 export async function enterPersonCenter(page: Page) {
   LoggerManager.Instance.start(

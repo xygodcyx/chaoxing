@@ -1,12 +1,14 @@
-import Singleton from '../base/Singleton.ts';
-import { LOGGER_FILE_PATH } from '../consts/index.ts';
+import Singleton from '../base/Singleton';
+import { LOGGER_DIR_PATH } from '../consts/index';
 import {
   LOG_LEVEL_ENUM,
   type LOG_LEVEL,
-} from '../enum/index.ts';
+} from '../enum/index';
 
 import { consola } from 'consola';
-import { appendStringToFile } from '../utils/index.ts';
+import { appendStringToFile } from '../utils/index';
+import path from 'node:path';
+import { DataManager } from './DataManager';
 
 export class LoggerManager extends Singleton {
   static get Instance(): LoggerManager {
@@ -19,15 +21,19 @@ export class LoggerManager extends Singleton {
     ...params: unknown[]
   ) {
     const date = new Date();
-    const logStr = `${date.toLocaleDateString()} - ${date.toLocaleTimeString()} [${level}] ${msg}\r\n`;
-    consola[level](msg, ...params);
-    await appendStringToFile(LOGGER_FILE_PATH, logStr);
+    const { phone } = DataManager.Instance.userStatus.info;
+    const logStr = `${phone} -- ${date.toLocaleDateString()} - ${date.toLocaleTimeString()} [${level}] ${msg}\r\n`;
+    consola[level](`${phone} -- ${msg}`, ...params);
+    await appendStringToFile(
+      path.join(LOGGER_DIR_PATH, `${phone}.log`),
+      logStr,
+    );
   }
   public async start(msg: string, ...params: unknown[]) {
-    await this.record(msg, LOG_LEVEL_ENUM.START);
+    await this.record(msg, LOG_LEVEL_ENUM.START, ...params);
   }
   public async box(msg: string, ...params: unknown[]) {
-    await this.record(msg, LOG_LEVEL_ENUM.BOX);
+    await this.record(msg, LOG_LEVEL_ENUM.BOX, ...params);
   }
   public async info(msg: string, ...params: unknown[]) {
     await this.record(msg, LOG_LEVEL_ENUM.INFO, ...params);

@@ -1,7 +1,7 @@
 import type { Page } from 'playwright';
 import fs from 'fs/promises';
 import path from 'path';
-import { LoggerManager } from '../runtime/LoggerManager.ts';
+import { LoggerManager } from '../runtime/LoggerManager';
 
 export function randomInt(start: number, end: number) {
   return Math.floor(Math.random() * (end - start)) + start;
@@ -103,7 +103,6 @@ export async function loadJsonDataForFile<T>(
     JSON.stringify(defaultValue),
   );
   try {
-    
     return JSON.parse(jsonStr) as T;
   } catch (error) {
     LoggerManager.Instance.error(
@@ -111,4 +110,21 @@ export async function loadJsonDataForFile<T>(
     );
     return;
   }
+}
+
+export function formatBytes(bytes: number, decimals = 2) {
+  if (bytes === 0) return '0 Bytes';
+
+  const k = 1024;
+  const dm = decimals < 0 ? 0 : decimals;
+  const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+
+  // 计算它是 1024 的几次幂
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+
+  return (
+    parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) +
+    ' ' +
+    sizes[i]
+  );
 }

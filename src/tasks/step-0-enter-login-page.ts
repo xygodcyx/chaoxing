@@ -1,9 +1,9 @@
-// save-auth.ts
+// save-auth
 import { chromium } from 'playwright';
 import path from 'path';
-import { AUTH_FILE_BASE_PATH } from '../consts/index.ts';
-import { LoggerManager } from '../runtime/LoggerManager.ts';
-import config from '../config/index.ts';
+import { AUTH_FILE_BASE_PATH } from '../consts/index';
+import { LoggerManager } from '../runtime/LoggerManager';
+import config from '../config/index';
 
 export async function enterLoginPage(
   phone: string,

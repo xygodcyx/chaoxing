@@ -1,15 +1,15 @@
 import type { Locator, Page } from 'playwright';
-import { DataManager } from '../runtime/DataManager.ts';
-import { getHiddenInputValue } from '../utils/index.ts';
+import { DataManager } from '../runtime/DataManager';
+import { getHiddenInputValue } from '../utils/index';
 import {
   BASE_URL,
   BASE_TASK_URL,
-} from '../consts/index.ts';
+} from '../consts/index';
 import type {
   CourseItem,
   TaskItem,
-} from '../types/index.ts';
-import { LoggerManager } from '../runtime/LoggerManager.ts';
+} from '../types/index';
+import { LoggerManager } from '../runtime/LoggerManager';
 
 export async function enterCoursePage(
   page: Page,

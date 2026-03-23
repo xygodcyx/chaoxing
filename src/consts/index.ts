@@ -1,13 +1,24 @@
 import path from 'path';
+import os from 'os';
 
-export const LOGGER_FILE_PATH = path.resolve(
-  'src',
+const DIR_BASE_URL =
+  process.env.NODE_ENV === 'production' ? os.homedir() : '';
+
+export const LOGGER_DIR_PATH = path.resolve(
+  DIR_BASE_URL,
+  '.chaoxing',
   'logs',
-  'index.log',
 );
-export const CACHE_DIR_PATH = path.resolve('src', 'cache');
+
+export const CACHE_DIR_PATH = path.resolve(
+  DIR_BASE_URL,
+  '.chaoxing',
+  'cache',
+);
 
 export const AUTH_FILE_BASE_PATH = path.resolve(
+  DIR_BASE_URL,
+  '.chaoxing',
   'playwright',
   '.auth',
 );
