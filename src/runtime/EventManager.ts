@@ -1,4 +1,5 @@
 import Singleton from '../base/Singleton';
+import { EVENT } from '../enum';
 
 interface IItem {
   func: Function;
@@ -13,9 +14,9 @@ export default class EventManager extends Singleton {
     return super.GetInstance<EventManager>();
   }
 
-  eventDic: Map<string, Array<IItem>> = new Map();
+  eventDic: Map<EVENT, Array<IItem>> = new Map();
 
-  on(event: string, func: Function, ctx?: unknown) {
+  on(event: EVENT, func: Function, ctx?: unknown) {
     if (this.eventDic.has(event)) {
       this.eventDic.get(event)!.push({ func, ctx });
     } else {
@@ -23,7 +24,7 @@ export default class EventManager extends Singleton {
     }
   }
 
-  off(event: string, func: Function) {
+  off(event: EVENT, func: Function) {
     if (this.eventDic.has(event)) {
       const index = this.eventDic
         .get(event)!
@@ -33,7 +34,15 @@ export default class EventManager extends Singleton {
     }
   }
 
-  emit(event: string, ...params: unknown[]) {
+  once(event: EVENT, func: Function, ctx?: unknown) {
+    const run = (...params: unknown[]) => {
+      ctx ? func.apply(ctx, params) : func(...params);
+      this.off(event, func);
+    };
+    this.on(event, run);
+  }
+
+  emit(event: EVENT, ...params: unknown[]) {
     if (this.eventDic.has(event)) {
       this.eventDic.get(event)!.forEach(({ func, ctx }) => {
         ctx ? func.apply(ctx, params) : func(...params);

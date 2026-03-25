@@ -1,6 +1,6 @@
 import { registerCommand } from './index';
 import type { CommandLogin } from '../types/index';
-import { enterLoginPage } from '../tasks/step-0-enter-login-page';
+import { enterLoginPage } from '../steps/step-0-enter-login-page';
 import { DataManager } from '../runtime/DataManager';
 import { CacheManager } from '../runtime/CacheManager';
 import { CACHE_KEY_ENUM } from '../enum';

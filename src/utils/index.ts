@@ -2,9 +2,14 @@ import type { Page } from 'playwright';
 import fs from 'fs/promises';
 import path from 'path';
 import { LoggerManager } from '../runtime/LoggerManager';
+import { SingleBar } from 'cli-progress';
 
 export function randomInt(start: number, end: number) {
   return Math.floor(Math.random() * (end - start)) + start;
+}
+
+export async function waitAlways() {
+  return new Promise(() => {});
 }
 
 export async function waitForTime(time: number) {
@@ -127,4 +132,17 @@ export function formatBytes(bytes: number, decimals = 2) {
     ' ' +
     sizes[i]
   );
+}
+
+export function pauseBar(bar: SingleBar) {
+  bar.stop(); // 停止并释放命令行行首
+}
+
+export function resumeBar(
+  bar: SingleBar,
+  total: number,
+  current: number,
+) {
+  // 重新启动，它会从上一行继续开始绘制
+  bar.start(total, current);
 }

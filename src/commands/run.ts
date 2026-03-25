@@ -12,11 +12,18 @@ import type {
 
 import { registerCommand } from './index';
 
-export function initUserStatus(
+export async function initUserStatus(
   commandUser: CommandUserInfo = {
     phone: '',
   },
 ) {
+  if (!commandUser.phone) {
+    LoggerManager.Instance.error(`手机号缺失`);
+    throw new Error('手机号缺失');
+  }
+
+  await CacheManager.Instance.init(commandUser.phone);
+
   const cacheUser = CacheManager.Instance.load<UserStatus>(
     `${CACHE_KEY_ENUM.USER_STATUS}`,
     {
@@ -46,6 +53,11 @@ export function initUserStatus(
       process.env.TASK ||
       '',
   };
+
+  await CacheManager.Instance.save(
+    `${CACHE_KEY_ENUM.USER_STATUS}`,
+    DataManager.Instance.userStatus,
+  );
 }
 
 export function registerRunCommand() {
@@ -87,15 +99,20 @@ export function registerRunCommand() {
 
       ConfigManager.Instance.launchOption.headless = !show;
 
-      initUserStatus({
+      await initUserStatus({
         phone,
         course,
         task,
       });
 
+      LoggerManager.Instance.success(
+        `${phone} 用户初始化成功，开始执行相应的任务`,
+      );
+
       const action = new Action(
         DataManager.Instance.userStatus,
       );
+
       await action.init();
     },
   );

@@ -5,8 +5,8 @@ import type { Browser, Page } from 'playwright';
 import { chromium } from 'playwright-extra';
 import stealth from 'puppeteer-extra-plugin-stealth';
 
-import { enterPersonCenter } from '../tasks/step-1-enter-person-center-page';
-import { enterCoursePage } from '../tasks/step-2-enter-course-page';
+import { enterPersonCenter } from '../steps/step-1-enter-person-center-page';
+import { enterCoursePage } from '../steps/step-2-enter-course-page';
 import type {
   CourseItem,
   TaskItem,
@@ -14,7 +14,7 @@ import type {
 } from '../types/index';
 
 import { CHAOXING_DIR_URL } from '../consts/index';
-import { enterTaskPage } from '../tasks/step-3-enter-task-page';
+import { enterTaskPage } from '../steps/step-3-enter-task-page';
 
 import EventManager from '../runtime/EventManager';
 
@@ -62,8 +62,6 @@ export default class Action {
       'auth',
       'user.json',
     );
-
-    await CacheManager.Instance.init(phone);
 
     if (!fs.existsSync(authPath)) {
       LoggerManager.Instance.error(
@@ -140,7 +138,7 @@ export default class Action {
 
     await this.updateCurTaskState();
 
-    enterTaskPage(this.page, this.curTask, this.user.info);
+    enterTaskPage(this.page, this.curTask);
   }
 
   async startCourseTask(
@@ -158,7 +156,7 @@ export default class Action {
       return;
     }
     this.curTask = task || this.tasks[0];
-    enterTaskPage(page, this.curTask, this.user.info);
+    enterTaskPage(page, this.curTask);
   }
 
   onTaskDone(task: TaskItem) {
@@ -186,7 +184,7 @@ export default class Action {
 
     this.updateCurTaskState();
 
-    enterTaskPage(page, this.curTask, this.user.info);
+    enterTaskPage(page, this.curTask);
   }
 
   onCourseDone(course: CourseItem) {

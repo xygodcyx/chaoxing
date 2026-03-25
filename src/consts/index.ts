@@ -40,7 +40,9 @@ export const BASE_TASK_URL = `${BASE_VERSION_ONE_URL}/mooc-ans/knowledge/cards`;
 
 export const BASE_READ_URL = `${BASE_VERSION_ONE_URL}/mooc-ans/course`;
 
-export const MULTIPLE_CHOICE = [
+export const JUDGMENT_CHOICES = [0, 1];
+
+export const MULTIPLE_CHOICES = [
   [0],
   [0, 1],
   [0, 1, 2],
@@ -57,3 +59,5 @@ export const MULTIPLE_CHOICE = [
   [2, 3],
   [3],
 ];
+
+export const SINGLE_CHOICES = [0, 1, 2, 3];

@@ -4,7 +4,6 @@ import fs from 'fs';
 import os from 'os';
 
 import { registerAllCommand } from './commands';
-import { ENV_FILE_PATH } from './consts';
 
 const localEnv = path.join(process.cwd(), '.env');
 const globalEnv = path.join(
