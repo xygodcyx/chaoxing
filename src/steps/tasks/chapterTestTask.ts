@@ -25,6 +25,16 @@ export async function execChapterTestTask(
   LoggerManager.Instance.start(
     `当前为 ${task.title} 的章节测验页面, 开始执行任务`,
   );
+  if (!process.env.DEEPSEEK_API_KEY) {
+    LoggerManager.Instance.warn(
+      `没有 DEEPSEEK_API_KEY ，无法执行自动答任务，请前往deepseek官网生成DEEPSEEK_API_KEY: https://platform.deepseek.com/DEEPSEEK_API_KEYs`,
+    );
+    LoggerManager.Instance.warn(
+      '请运行 "chaoxing where" 命令前往配置目录编辑.env文件并添加DEEPSEEK_API_KEY字段, eg: DEEPSEEK_API_KEY=sk-xxxxxxxxxxxx',
+    );
+    EventManager.Instance.emit(EVENTS_ENUM.TASK_DONE, task);
+    return;
+  }
 
   const taskFrame = page.frameLocator(
     'iframe[src*="work/index.html"]',

@@ -9,7 +9,7 @@ export async function fetchAnswersFromAI(
   if (!openai) {
     openai = new OpenAI({
       baseURL: 'https://api.deepseek.com',
-      apiKey: process.env.API_KEY,
+      apiKey: process.env.DEEPSEEK_API_KEY,
     });
   }
   try {
