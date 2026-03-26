@@ -1,3 +1,7 @@
+import dotenv from 'dotenv';
+import os from 'os';
+import path from 'path';
+
 import Action from '../action/Action';
 import { CACHE_KEY_ENUM } from '../enum/index';
 import { CacheManager } from '../runtime/CacheManager';
@@ -93,6 +97,24 @@ export function registerRunCommand() {
     ],
     async str => {
       const phone = str.phone;
+      if (!phone) {
+        LoggerManager.Instance.error('请提供手机号');
+        return;
+      }
+
+      const envPath = path.join(
+        os.homedir(),
+        '.chaoxing',
+        phone,
+        '.env',
+      );
+
+      dotenv.config({
+        path: envPath,
+        override: true,
+        quiet: true,
+      });
+
       const course = str.course;
       const task = str.task;
       const show = str.show;
