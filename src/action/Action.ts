@@ -74,7 +74,7 @@ export default class Action {
 
     if (!fs.existsSync(authPath)) {
       LoggerManager.Instance.error(
-        '请先运行pnpm start login进行登录',
+        '请先运行 "chaoxing login" 进行登录',
       );
       return;
     }

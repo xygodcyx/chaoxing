@@ -102,12 +102,15 @@ export function registerRunCommand() {
         return;
       }
 
-      const envPath = path.join(
-        os.homedir(),
+      const envPath = path.resolve(
+        process.env.NODE_ENV === 'production' ?
+          os.homedir()
+        : '',
         '.chaoxing',
         phone,
         '.env',
       );
+      console.log(envPath)
 
       dotenv.config({
         path: envPath,

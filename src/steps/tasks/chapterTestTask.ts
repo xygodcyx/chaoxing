@@ -73,7 +73,7 @@ export async function execChapterTestTask(
 
   const subjectList: Array<SubjectItem> = [];
 
-  const subjectLengthRegex = /共\s*(\d+)\s*题/;
+  const subjectLengthRegex = /\s*(\d+)\s*/;
   const subjectTypeRegex =
     /(单选题|多选题|填空题|判断题|简答题)/;
 
@@ -97,6 +97,7 @@ export async function execChapterTestTask(
     const subjectLength = +(
       typeContent?.match(subjectLengthRegex)?.[1] || '1'
     );
+    console.log(subjectLength)
     const subjectType = (typeContent?.match(
       subjectTypeRegex,
     )?.[1] || '') as SubjectType;
@@ -158,6 +159,7 @@ export async function execChapterTestTask(
   LoggerManager.Instance.debug(
     `${task.title} 的题目数量：${subjectList.length}`,
   );
+  
   LoggerManager.Instance.debug(
     `${task.title} 题目的所有选项数量：${allChoiceLocs.length}`,
   );
