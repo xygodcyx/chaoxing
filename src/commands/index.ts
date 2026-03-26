@@ -10,7 +10,7 @@ function initCommandInfo() {
   program
     .name('chaoxing')
     .description('自动刷超星网课')
-    .version('1.1.4');
+    .version('1.1.5');
 }
 
 interface CommandItem {
