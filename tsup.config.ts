@@ -2,15 +2,17 @@ import { defineConfig } from 'tsup';
 
 export default defineConfig({
   entry: ['src/index.ts'],
-  format: ['esm', 'cjs'],
+  format: ['esm'],
   clean: true,
   minify: false,
+  splitting: true,
   sourcemap: true,
   define: {
     'process.env.NODE_ENV': JSON.stringify('production'),
   },
+  external: ['axios'],
   banner: {
-      js: `#!/usr/bin/env node
+    js: `#!/usr/bin/env node
     
 /**
  * @project chaoxing

@@ -11,6 +11,7 @@ export type EVENT =
 export const LOG_LEVEL_ENUM = {
   INFO: 'info',
   START: 'start',
+  DEBUG: 'debug',
   BOX: 'box',
   SUCCESS: 'success',
   WARN: 'warn',

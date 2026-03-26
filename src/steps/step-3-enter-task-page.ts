@@ -12,8 +12,7 @@ export async function enterTaskPage(
   page: Page,
   task: TaskItem,
 ) {
-  const taskId = Date.now();
-  DataManager.Instance.globalTaskId = taskId;
+  DataManager.Instance.globalTaskLink = task.link;
 
   if (true && task.isFinish) {
     LoggerManager.Instance.info(
@@ -58,7 +57,7 @@ export async function enterTaskPage(
     EventManager.Instance.emit(EVENTS_ENUM.TASK_DONE, task);
     return;
   } else if (task.title === '阅读') {
-    await execReadTask(page, task, taskId);
+    await execReadTask(page, task);
     return;
   }
 
@@ -66,7 +65,7 @@ export async function enterTaskPage(
 
   // 如果第一个任务点是学习目标页，那么就会自动跳过从而进入到这里，如果第一个就是视频页，那也会进入到这里
   if (pageTitle === '视频' || pageTitle === '课程') {
-    await execVideoTask(page, task, taskId, searchObj);
+    await execVideoTask(page, task, searchObj);
   } else {
     const pageTitle = await page.title();
     const pageUrl = page.url();

@@ -1,36 +1,47 @@
 import cliProgress from 'cli-progress';
 import colors from 'ansi-colors';
 import { Page, ConsoleMessage } from 'playwright';
-import {
-  JUDGMENT_CHOICES,
-  MULTIPLE_CHOICES,
-  SINGLE_CHOICES,
-  BASE_TASK_URL,
-} from '../../consts';
 import { EVENTS_ENUM } from '../../enum';
 import { DataManager } from '../../runtime/DataManager';
 import EventManager from '../../runtime/EventManager';
 import { LoggerManager } from '../../runtime/LoggerManager';
 import { TaskItem } from '../../types';
-import { pauseBar, resumeBar } from '../../utils';
+import {
+  pauseBar,
+  resumeBar,
+  waitAlways,
+} from '../../utils';
 import { execChapterTestTask } from './chapterTestTask';
 import { execAnswerQuestionTask } from './answerVideoQuestionTask';
 
 export async function execVideoTask(
   page: Page,
   task: TaskItem,
-  taskId: number,
   searchObj: URLSearchParams,
 ) {
-  EventManager.Instance.once(
-    EVENTS_ENUM.VIDEO_DONE,
-    onVideoTaskDone,
-  );
   LoggerManager.Instance.success(
     `当前为 ${task.title} 的视频页面, 开始执行任务`,
   );
   const frameLoc = page.frameLocator('iframe');
   const videoLoc = frameLoc.locator('video');
+
+  const locator = page.locator('.ans-job-icon'); // 或者类名定位
+  const label = await locator.getAttribute('aria-label');
+
+  if (label === '任务点已完成') {
+    LoggerManager.Instance.success(
+      '当前章节的视频任务刷完啦, 进入答题页面开始答题',
+    );
+    page.off('console', onConsoleText);
+    EventManager.Instance.emit(
+      EVENTS_ENUM.VIDEO_DONE,
+      page,
+      task,
+      searchObj,
+    );
+    return;
+  }
+
   const getIsPaused = async () => {
     const isPaused = await videoLoc.evaluate(
       async (video: HTMLVideoElement) => {
@@ -95,7 +106,7 @@ export async function execVideoTask(
     .locator('video')
     .evaluate(
       async (video: HTMLVideoElement, d: number) => {
-        video.currentTime = d - 1;
+        video.currentTime = d - 0.1;
       },
       DURATION,
     );
@@ -103,14 +114,11 @@ export async function execVideoTask(
   let isInTopicPanel = false;
 
   async function retryPlayVideo(retryCount: number = 30) {
-    if (
-      isInTopicPanel ||
-      DataManager.Instance.globalTaskId !== taskId
-    ) {
-      return;
-    }
     for (let index = 0; index < retryCount; index++) {
-      if (DataManager.Instance.globalTaskId !== taskId) {
+      if (
+        isInTopicPanel ||
+        DataManager.Instance.globalTaskLink !== task.link
+      ) {
         return;
       }
       const paused = await getIsPaused();
@@ -129,7 +137,7 @@ export async function execVideoTask(
 
   let timeId: NodeJS.Timeout | null = null;
   function onConsoleText(msg: ConsoleMessage) {
-    if (DataManager.Instance.globalTaskId !== taskId) {
+    if (DataManager.Instance.globalTaskLink !== task.link) {
       timeId ? clearTimeout(timeId) : '';
       return;
     }
@@ -167,13 +175,13 @@ export async function execVideoTask(
 
   const timeUpdateId = setInterval(async () => {
     const time = await getCurTime();
-    if (DataManager.Instance.globalTaskId !== taskId) {
+    if (DataManager.Instance.globalTaskLink !== task.link) {
       clearInterval(timeUpdateId);
       bar.stop();
       return;
     }
     bar.update(time);
-    if (Math.abs(DURATION - time) < 0.01) {
+    if (Math.abs(DURATION - time) < 1) {
       bar.stop();
       clearInterval(findTopicId);
       clearInterval(timeUpdateId);
@@ -189,12 +197,11 @@ export async function execVideoTask(
         searchObj,
       );
     }
-  }, 1000);
+  }, 300);
 
-    
   let findTopicId = setInterval(checkHasQuestion, 1000);
   async function checkHasQuestion() {
-    if (DataManager.Instance.globalTaskId !== taskId) {
+    if (DataManager.Instance.globalTaskLink !== task.link) {
       clearInterval(findTopicId);
       return;
     }
@@ -246,22 +253,5 @@ export async function execVideoTask(
 
     findTopicId = setInterval(checkHasQuestion, 1000);
     isInTopicPanel = false;
-  }
-}
-
-async function onVideoTaskDone(
-  page: Page,
-  task: TaskItem,
-  searchObj: URLSearchParams,
-) {
-  const curNum: number = +searchObj.get('num')!;
-  searchObj.set('num', String(curNum + 1));
-  await page.goto(
-    `${BASE_TASK_URL}?${searchObj.toString()}`,
-  );
-  await page.waitForLoadState('domcontentloaded');
-  const pageTitle = await page.title();
-  if (pageTitle === '章节测验') {
-    await execChapterTestTask(page, task);
   }
 }

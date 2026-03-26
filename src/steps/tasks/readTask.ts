@@ -10,9 +10,8 @@ import { waitForRandomTime } from '../../utils';
 export async function execReadTask(
   page: Page,
   task: TaskItem,
-  taskId: number,
 ) {
-  if (DataManager.Instance.globalTaskId !== taskId) {
+  if (DataManager.Instance.globalTaskLink !== task.link) {
     return;
   }
   const frameData = await page

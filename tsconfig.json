@@ -1,15 +1,15 @@
 {
     "compilerOptions": {
-        "target": "ES2020", // 建议较新的版本
-        "module": "es2015",
+        "target": "ES2020",
+        "module": "es2020",
         "moduleResolution": "node",
+        "resolveJsonModule": true,
         "lib": [
             "ESNext",
             "DOM"
         ],
-        "outDir": "./dist", // 编译后的 JS 存放在这里
-        "rootDir": "./src", // 你的源码位置
-        "declaration": true, // 必须：生成 .d.ts 文件，别人用你的包才有 TS 提示
+        "outDir": "./dist",
+        "rootDir": "./src",
         "strict": true,
         "esModuleInterop": true,
         "skipLibCheck": true,

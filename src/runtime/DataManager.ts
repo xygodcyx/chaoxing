@@ -19,5 +19,5 @@ export class DataManager extends Singleton {
     curTaskName: '',
   };
 
-  public globalTaskId: number = 0;
+  public globalTaskLink: string = '';
 }

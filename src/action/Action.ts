@@ -13,7 +13,10 @@ import type {
   UserStatus,
 } from '../types/index';
 
-import { CHAOXING_DIR_URL } from '../consts/index';
+import {
+  BASE_TASK_URL,
+  CHAOXING_DIR_URL,
+} from '../consts/index';
 import { enterTaskPage } from '../steps/step-3-enter-task-page';
 
 import EventManager from '../runtime/EventManager';
@@ -23,6 +26,7 @@ import { DataManager } from '../runtime/DataManager';
 import { LoggerManager } from '../runtime/LoggerManager';
 import { CacheManager } from '../runtime/CacheManager';
 import { ConfigManager } from '../runtime/ConfigManager';
+import { execChapterTestTask } from '../steps/tasks/chapterTestTask';
 
 export default class Action {
   public user: UserStatus;
@@ -41,6 +45,11 @@ export default class Action {
   }
 
   async init() {
+    EventManager.Instance.on(
+      EVENTS_ENUM.VIDEO_DONE,
+      this.onVideoTaskDone,
+    );
+
     EventManager.Instance.on(
       EVENTS_ENUM.TASK_DONE,
       this.onTaskDone,
@@ -157,6 +166,23 @@ export default class Action {
     }
     this.curTask = task || this.tasks[0];
     enterTaskPage(page, this.curTask);
+  }
+
+  async onVideoTaskDone(
+    page: Page,
+    task: TaskItem,
+    searchObj: URLSearchParams,
+  ) {
+    const curNum: number = +searchObj.get('num')!;
+    searchObj.set('num', String(curNum + 1));
+    await page.goto(
+      `${BASE_TASK_URL}?${searchObj.toString()}`,
+    );
+    await page.waitForLoadState('domcontentloaded');
+    const pageTitle = await page.title();
+    if (pageTitle === '章节测验') {
+      await execChapterTestTask(page, task);
+    }
   }
 
   onTaskDone(task: TaskItem) {

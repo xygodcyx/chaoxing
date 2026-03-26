@@ -1,14 +1,8 @@
 import type { Locator, Page } from 'playwright';
 import { DataManager } from '../runtime/DataManager';
 import { getHiddenInputValue } from '../utils/index';
-import {
-  BASE_URL,
-  BASE_TASK_URL,
-} from '../consts/index';
-import type {
-  CourseItem,
-  TaskItem,
-} from '../types/index';
+import { BASE_URL, BASE_TASK_URL } from '../consts/index';
+import type { CourseItem, TaskItem } from '../types/index';
 import { LoggerManager } from '../runtime/LoggerManager';
 
 export async function enterCoursePage(

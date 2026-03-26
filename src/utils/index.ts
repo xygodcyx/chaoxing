@@ -4,6 +4,13 @@ import path from 'path';
 import { LoggerManager } from '../runtime/LoggerManager';
 import { SingleBar } from 'cli-progress';
 
+export function saveArrayIndex(
+  index: number,
+  length: number,
+) {
+  return Math.max(0, Math.min(index, length - 1));
+}
+
 export function randomInt(start: number, end: number) {
   return Math.floor(Math.random() * (end - start)) + start;
 }
@@ -145,4 +152,23 @@ export function resumeBar(
 ) {
   // 重新启动，它会从上一行继续开始绘制
   bar.start(total, current);
+}
+
+/**
+ * 清洗超星题目文本
+ * @param rawTitle 原始脏数据
+ * @returns 干净的题目字符串
+ */
+export function cleanString(rawTitle: string): string {
+  return (
+    rawTitle
+      // 1. 替换所有的换行、制表符、多余空格为单个空格
+      .replace(/[\n\t\r]/g, '')
+      // 2. 去掉开头的题号（如 "3 " 或 "3."）
+      .replace(/^\d+[\s\.]*/, '')
+      // 3. 去掉题型标注（如 "【判断题】"）
+      .replace(/【.*?】/, '')
+      // 4. 去掉结尾的空括号
+      .replace(/[（\(]\s*[）\)]\s*$/, '') || rawTitle.trim()
+  );
 }

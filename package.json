@@ -5,6 +5,7 @@
   "description": "自动刷超星网课",
   "main": "dist/index.js",
   "scripts": {
+    "serve": "python server/app.py",
     "install": "npx playwright install",
     "dev": "cross-env NODE_ENV=development tsx src/index.ts",
     "build": "npx tsup src/index.ts"
@@ -15,6 +16,7 @@
   "files": [
     "dist",
     "src",
+    "data",
     "README.md"
   ],
   "repository": {
@@ -33,6 +35,8 @@
     "@types/ansi-colors": "^3.2.6",
     "@types/cli-progress": "^3.11.6",
     "@types/node": "^25.5.0",
+    "@types/opentype.js": "^1.3.9",
+    "axios": "^1.13.6",
     "cross-env": "^10.1.0",
     "tsup": "^8.5.1",
     "tsx": "^4.21.0",
@@ -44,6 +48,8 @@
     "commander": "^14.0.3",
     "consola": "^3.4.2",
     "dotenv": "^17.3.1",
+    "openai": "^6.33.0",
+    "opentype.js": "^1.3.4",
     "playwright": "^1.58.2",
     "playwright-extra": "^4.3.6",
     "puppeteer-extra-plugin-stealth": "^2.11.2"
