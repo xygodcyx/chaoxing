@@ -6,7 +6,7 @@ export default defineConfig({
   clean: true,
   minify: false,
   splitting: true,
-  sourcemap: true,
+  // sourcemap: true,
   define: {
     'process.env.NODE_ENV': JSON.stringify('production'),
   },
