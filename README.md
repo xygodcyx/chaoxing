@@ -3,7 +3,8 @@
 
 [![Author](https://img.shields.io/badge/author-xygodcyx-orange)](https://github.com/xygodcyx)
 [![License: CC BY-NC-SA 4.0](https://img.shields.io/badge/License-CC%20BY--NC--SA%204.0-lightgrey.svg)](https://creativecommons.org/licenses/by-nc-sa/4.0/)
-[![Build Tool: tsup](https://img.shields.io/badge/build-tsup-blue)](https://tsup.egoist.dev/)
+[![NPM Version](https://img.shields.io/npm/v/chaoxing)](https://www.npmjs.com/package/chaoxing)
+[![Build Tool: tsup](https://img.shields.io/badge/build-tsup-yellow)](https://tsup.egoist.dev/)
 
 > **⚠️ 严正声明**：本项目由 **xygodcyx** 原创开发，仅供技术学习与交流。**严禁用于任何商业用途**。本项目已实现高度的隐私脱敏，保护用户信息安全。
 
