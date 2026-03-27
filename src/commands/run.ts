@@ -93,13 +93,18 @@ export function registerRunCommand() {
       {
         short: 's',
         long: 'show',
-        type: '',
         description:
           '启动图形化浏览器, 查看实时运行状态（需要图形化操作系统）',
+      },
+      {
+        short: 'o',
+        long: 'onlyVideo',
+        description: '只刷视频不答题',
       },
     ],
     async str => {
       let phone = str.phone;
+      DataManager.Instance.onlyVideoMode = str.onlyVideo;
       if (!phone) {
         phone = (await p.password({
           message: '请输入手机号',

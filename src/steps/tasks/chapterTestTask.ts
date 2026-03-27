@@ -28,6 +28,7 @@ export async function execChapterTestTask(
   LoggerManager.Instance.start(
     `当前为 ${task.title} 的章节测验页面, 开始执行任务...`,
   );
+
   if (!process.env.DEEPSEEK_API_KEY) {
     LoggerManager.Instance.warn(
       `没有 DEEPSEEK_API_KEY , 无法执行自动答任务, 请前往deepseek官网生成DEEPSEEK_API_KEY: https://platform.deepseek.com/DEEPSEEK_API_KEYs`,

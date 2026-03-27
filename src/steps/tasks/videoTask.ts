@@ -29,9 +29,6 @@ export async function execVideoTask(
   const label = await locator.getAttribute('aria-label');
 
   if (label === '任务点已完成') {
-    LoggerManager.Instance.success(
-      '当前章节的视频任务刷完啦, 进入答题页面开始答题',
-    );
     page.off('console', onConsoleText);
     EventManager.Instance.emit(
       EVENTS_ENUM.VIDEO_DONE,
@@ -185,9 +182,6 @@ export async function execVideoTask(
       bar.stop();
       clearInterval(findTopicId);
       clearInterval(timeUpdateId);
-      LoggerManager.Instance.success(
-        '当前章节的视频任务刷完啦, 进入答题页面开始答题',
-      );
       timeId ? clearTimeout(timeId) : '';
       page.off('console', onConsoleText);
       EventManager.Instance.emit(

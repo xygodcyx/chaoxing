@@ -20,5 +20,7 @@ export class DataManager extends Singleton {
     curTaskName: '',
   };
 
+  public onlyVideoMode: boolean = false;
+
   public globalTaskLink: string = '';
 }

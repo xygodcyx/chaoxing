@@ -176,6 +176,20 @@ export default class Action {
     task: TaskItem,
     searchObj: URLSearchParams,
   ) {
+    if (DataManager.Instance.onlyVideoMode) {
+      LoggerManager.Instance.success(
+        `${task.title} 刷完啦, 开始刷下一个`,
+      );
+
+      EventManager.Instance.emit(
+        EVENTS_ENUM.TASK_DONE,
+        task,
+      );
+      return;
+    }
+    LoggerManager.Instance.success(
+      '当前章节的视频任务刷完啦, 进入答题页面开始答题',
+    );
     const curNum: number = +searchObj.get('num')!;
     searchObj.set('num', String(curNum + 1));
     await page.goto(
