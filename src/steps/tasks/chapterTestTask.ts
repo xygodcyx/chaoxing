@@ -121,10 +121,13 @@ export async function execChapterTestTask(
         )?.trim() || '';
       const cleanedTitle = cleanString(subjectTitle);
 
-      let decodeTitle =
-        fontBase64 ?
-          await decodeFont(fontBase64, cleanedTitle)
-        : await decodeFontInProd(cleanedTitle);
+      let decodeTitle = cleanedTitle;
+
+      decodeTitle =
+        process.env.NODE_ENV === 'production' ?
+          await decodeFontInProd(cleanedTitle)
+        : await decodeFont(fontBase64, cleanedTitle);
+
       const choiceLocs = await subjectLoc
         .locator(
           subjectType === '多选题' ?
@@ -140,10 +143,13 @@ export async function execChapterTestTask(
         const cleanChoiceContent = cleanString(
           choiceContent || '',
         );
-        const decodeChoiceContent = await decodeFont(
-          fontBase64,
-          cleanChoiceContent,
-        );
+        const decodeChoiceContent =
+          process.env.NODE_ENV === 'production' ?
+            await decodeFontInProd(cleanChoiceContent)
+          : await decodeFont(
+              fontBase64,
+              cleanChoiceContent,
+            );
         const choiceItem = {
           index: choiceIndex,
           content: decodeChoiceContent,

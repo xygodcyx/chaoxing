@@ -41,7 +41,10 @@ export async function decodeFont(
     console.warn(
       '[Dev] Python server not responding, returning original text.',
     );
-    return encryptedText;
+    return encryptedText
+      .split('')
+      .map(char => (MappingData as any)[char] || char)
+      .join('');
   }
 }
 
