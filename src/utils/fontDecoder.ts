@@ -10,6 +10,10 @@ export async function decodeFont(
 ) {
   // 2. 替换字符串
   if (process.env.NODE_ENV === 'production') {
+    return encryptedText
+      .split('')
+      .map(char => (MappingData as any)[char] || char)
+      .join('');
   }
 
   try {
@@ -25,6 +29,7 @@ export async function decodeFont(
       'data',
       'mapping.json',
     );
+
     const mapping = response.data;
     LoggerManager.Instance.debug(
       `[DEV] mapping数据已更新:${dataPath}`,
