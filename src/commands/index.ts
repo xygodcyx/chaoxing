@@ -5,6 +5,7 @@ import { registerRunCommand } from './run';
 import { registerClearCommand } from './clear';
 import { registerLoginCommand } from './login';
 import { registerWhereCommand } from './where';
+import { registerReselectCommand } from './reselect';
 
 function initCommandInfo() {
   program
@@ -16,7 +17,7 @@ function initCommandInfo() {
 interface CommandItem {
   short: string;
   long: string;
-  type: string;
+  type?: string;
   description?: string;
 }
 
@@ -44,6 +45,7 @@ export function registerAllCommand() {
   registerRunCommand();
   registerClearCommand();
   registerWhereCommand();
+  registerReselectCommand();
 
   program.parse();
 }

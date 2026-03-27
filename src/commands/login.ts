@@ -1,3 +1,5 @@
+import * as p from '@clack/prompts';
+
 import { registerCommand } from './index';
 import type { CommandLogin } from '../types/index';
 import { enterLoginPage } from '../steps/step-0-enter-login-page';
@@ -33,29 +35,58 @@ export function registerLoginCommand() {
       },
     ],
     async str => {
-      const phone = str.phone ?? process.env.PHONE;
-      const password = str.password ?? process.env.PASSWORD;
+      let phone = str.phone ?? process.env.PHONE;
+      let password = str.password ?? process.env.PASSWORD;
       const show = str.show;
 
       ConfigManager.Instance.launchOption.headless = !show;
 
       if (!phone) {
-        LoggerManager.Instance.error('请提供手机号');
-        return;
+        phone = (await p.password({
+          message: '请输入手机号',
+          // 如果想完全隐藏输入内容（像密码一样）：
+          // type: 'password'
+          validate(value) {
+            if (!value || value.length !== 11)
+              return '手机号格式不正确';
+          },
+        })) as string;
+        if (!phone) {
+          LoggerManager.Instance.error('请提供手机号');
+          return;
+        }
       }
 
       if (!password) {
-        LoggerManager.Instance.error('请提供密码');
-        return;
+        password = (await p.password({
+          message: '请输入密码',
+          // 如果想完全隐藏输入内容（像密码一样）：
+          validate(value) {
+            if (!value) return '密码不能为空';
+          },
+        })) as string;
+        if (!password) {
+          LoggerManager.Instance.error('请提供密码');
+          return;
+        }
       }
 
-      DataManager.Instance.userStatus.info.phone = phone;
-      await CacheManager.Instance.reLinkCacheDirPath(phone);
-      await CacheManager.Instance.save(
-        `${CACHE_KEY_ENUM.USER_STATUS}`,
-        DataManager.Instance.userStatus,
-      );
-      await enterLoginPage(phone, password);
+      try {
+        DataManager.Instance.userStatus.info.phone = phone;
+        await CacheManager.Instance.reLinkCacheDirPath(
+          phone,
+        );
+        await CacheManager.Instance.save(
+          `${CACHE_KEY_ENUM.USER_STATUS}`,
+          DataManager.Instance.userStatus,
+        );
+        await enterLoginPage(phone, password);
+      } catch (error: any) {
+        LoggerManager.Instance.error(
+          `登录出错：${error.message}`,
+          error,
+        );
+      }
     },
   );
 }

@@ -1,6 +1,15 @@
+import {
+  intro,
+  outro,
+  isCancel,
+  cancel,
+  multiselect,
+} from '@clack/prompts';
+
 import type { Page } from 'playwright';
 import type { CourseItem } from '../types/index';
 import { LoggerManager } from '../runtime/LoggerManager';
+import { DataManager } from '../runtime/DataManager';
 
 export async function enterPersonCenter(page: Page) {
   LoggerManager.Instance.start(
@@ -55,7 +64,7 @@ export async function enterPersonCenter(page: Page) {
 
   const courses: Array<CourseItem> = [];
   let index = 0;
-  for (const courseLoc of coursesLoc.slice(0, 2)) {
+  for (const courseLoc of coursesLoc) {
     const title =
       (await courseLoc
         .locator('.course-name')
@@ -93,6 +102,36 @@ export async function enterPersonCenter(page: Page) {
 
     index++;
   }
+
+  const options = courses.map(c => {
+    return {
+      value: c,
+      label: c.title,
+    };
+  });
+
+  const initialCourse = courses.find(
+    item =>
+      item.title ===
+      DataManager.Instance.userStatus.curCourseName,
+  );
+  intro(`选课`);
+  // Do stuff
+  const additionalCourses = await multiselect({
+    message: '选择要刷的课程',
+    initialValues: [initialCourse],
+    options,
+    required: true,
+  });
+
+  if (isCancel(additionalCourses)) {
+    cancel('取消选课');
+    process.exit(0);
+  }
+
+  outro(
+    `选好啦 : ${additionalCourses.map(ac => ac?.title)}`,
+  );
   LoggerManager.Instance.success(`获取课程成功!`);
-  return courses;
+  return additionalCourses;
 }

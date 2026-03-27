@@ -1,3 +1,5 @@
+import * as p from '@clack/prompts';
+
 import fs from 'fs/promises';
 import path from 'path';
 
@@ -5,7 +7,10 @@ import { registerCommand } from './index';
 import type { CommandClear } from '../types/index';
 import { CHAOXING_DIR_URL } from '../consts/index';
 import { LoggerManager } from '../runtime/LoggerManager';
-import { formatBytes } from '../utils/index';
+import {
+  formatBytes,
+  getStorageDirName,
+} from '../utils/index';
 import type { Dirent, Stats } from 'fs';
 
 interface DeleteItem {
@@ -26,27 +31,42 @@ export function registerClearCommand() {
       {
         short: 'a',
         long: 'all',
-        type: '',
         description: '指定该参数时清除所有用户的缓存',
       },
     ],
     async str => {
-      const phone = str.phone;
+      let phone = str.phone;
+      const all = str.all;
+      if (!phone) {
+        phone = (await p.password({
+          message: '请输入手机号',
+          validate(value) {
+            if (!value || value.length !== 11)
+              return '手机号格式不正确';
+          },
+        })) as string;
+        if (!phone) {
+          LoggerManager.Instance.error('请提供手机号');
+          return;
+        }
+      }
+
       const deletedList: Array<DeleteItem> = [];
-      if (str.phone && !str.all) {
+
+      if (phone && !all) {
         const cacheDirPath = path.resolve(
           CHAOXING_DIR_URL,
-          phone,
+          getStorageDirName(phone),
           'cache',
         );
         const list = await deleteCacheForDir(cacheDirPath);
         deletedList.push(...list);
-      } else if (str.all && !str.phone) {
+      } else if (all && !phone) {
         const list = await findAllCacheDirAndDelete(
           CHAOXING_DIR_URL,
         );
         deletedList.push(...list);
-      } else if (str.phone && str.all) {
+      } else if (phone && all) {
         LoggerManager.Instance.error(
           '不能同时指定phone和all参数, 请任选其一',
         );

@@ -1,8 +1,40 @@
+import { chromium } from 'playwright-extra';
 import type { Page } from 'playwright';
 import fs from 'fs/promises';
 import path from 'path';
+import { createHash } from 'crypto';
+
 import { LoggerManager } from '../runtime/LoggerManager';
 import { SingleBar } from 'cli-progress';
+import { CHAOXING_DIR_URL } from '../consts';
+import { ConfigManager } from '../runtime/ConfigManager';
+
+/**
+ * 将手机号转为唯一的哈希字符串，用于目录名
+ */
+export function getStorageDirName(phone: string): string {
+  return createHash('md5')
+    .update(phone)
+    .digest('hex')
+    .slice(0, 16);
+  // 取前16位足够区分，且路径不会太长
+}
+
+export function maskPhone(phone: string) {
+  const str = String(phone);
+  return str.replace(/(\d{3})\d{4}(\d{4})/, '$1****$2');
+}
+
+export function getElementIndexInArray(
+  element: any,
+  arr: Array<any>,
+  flag?: string,
+) {
+  const index = arr.findIndex(item =>
+    flag ? item[flag] === element[flag] : item === element,
+  );
+  return index;
+}
 
 export function saveArrayIndex(
   index: number,
@@ -171,4 +203,25 @@ export function cleanString(rawTitle: string): string {
       // 4. 去掉结尾的空括号
       .replace(/[（\(]\s*[）\)]\s*$/, '') || rawTitle.trim()
   );
+}
+
+export async function getLoggedChromePage(phone: string) {
+  const browser = await chromium.launch(
+    ConfigManager.Instance.launchOption,
+  );
+
+  const authPath = path.resolve(
+    `${CHAOXING_DIR_URL}`,
+    getStorageDirName(phone),
+    'auth',
+    'user.json',
+  );
+
+  const context = await browser.newContext({
+    storageState: authPath,
+  });
+
+  const page = await context.newPage();
+
+  return { browser, page };
 }

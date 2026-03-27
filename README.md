@@ -58,7 +58,8 @@
 1. **Command Line** (终端输入的 `-p`, `-w`, `-s` 等)
 2. **Local Cache** (回退到上一次的执行进度)
 3. **Local `.env`** (当前执行目录下的配置文件)
-4. **Global `.env`** (全局配置文件 `~/.chaoxing/.env`)
+4. **Private `.env`** (指定手机号目录下的配置文件 `~/.chaoxing/you phone/.env`)
+5. **Global `.env`** (全局配置文件 `~/.chaoxing/.env`)
 
 ### `.env` 示例
 

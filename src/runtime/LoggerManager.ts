@@ -5,7 +5,10 @@ import {
   type LOG_LEVEL,
 } from '../enum/index';
 
-import { appendStringToFile } from '../utils/index';
+import {
+  appendStringToFile,
+  getStorageDirName,
+} from '../utils/index';
 import path from 'node:path';
 import { DataManager } from './DataManager';
 import { ConsolaInstance, createConsola } from 'consola';
@@ -41,7 +44,7 @@ export class LoggerManager extends Singleton {
     await appendStringToFile(
       path.join(
         CHAOXING_DIR_URL,
-        phone,
+        phone ? getStorageDirName(phone) : '',
         'logs',
         'index.log',
       ),

@@ -27,6 +27,10 @@ import { LoggerManager } from '../runtime/LoggerManager';
 import { CacheManager } from '../runtime/CacheManager';
 import { ConfigManager } from '../runtime/ConfigManager';
 import { execChapterTestTask } from '../steps/tasks/chapterTestTask';
+import {
+  getElementIndexInArray,
+  getStorageDirName,
+} from '../utils';
 
 export default class Action {
   public user: UserStatus;
@@ -67,11 +71,10 @@ export default class Action {
 
     const authPath = path.resolve(
       `${CHAOXING_DIR_URL}`,
-      phone,
+      getStorageDirName(phone),
       'auth',
       'user.json',
     );
-
     if (!fs.existsSync(authPath)) {
       LoggerManager.Instance.error(
         '请先运行 "chaoxing login" 进行登录',
@@ -219,20 +222,28 @@ export default class Action {
     LoggerManager.Instance.success(
       `已经完成的课程： ${course.title}(${course.index + 1})`,
     );
-    if (course.index === courses.length - 1) {
+    const index = getElementIndexInArray(
+      course,
+      courses,
+      'index',
+    );
+
+    if (index === courses.length - 1) {
       LoggerManager.Instance.success(
         '所有课程全部刷完啦！！！关闭浏览器',
       );
       browser?.close();
       return;
     }
+
     if (!page) {
       LoggerManager.Instance.error(
         '浏览器页面实例丢失，请检查错误...',
       );
       return;
     }
-    this.curCourse = courses[course.index + 1];
+
+    this.curCourse = courses[index + 1];
 
     this.updateCurCourseState();
 

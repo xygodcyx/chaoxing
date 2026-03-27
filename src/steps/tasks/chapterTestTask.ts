@@ -97,7 +97,6 @@ export async function execChapterTestTask(
     const subjectLength = +(
       typeContent?.match(subjectLengthRegex)?.[1] || '1'
     );
-    console.log(subjectLength)
     const subjectType = (typeContent?.match(
       subjectTypeRegex,
     )?.[1] || '') as SubjectType;

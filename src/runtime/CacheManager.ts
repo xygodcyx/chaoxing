@@ -3,6 +3,7 @@ import fs from 'fs/promises';
 import Singleton from '../base/Singleton';
 import { CHAOXING_DIR_URL } from '../consts';
 import {
+  getStorageDirName,
   loadJsonDataForFile,
   saveJsonDataToFile,
 } from '../utils/index';
@@ -14,18 +15,11 @@ export class CacheManager extends Singleton {
 
   private cacheMap: Map<string, unknown | null> = new Map();
 
-  private _activeCacheDir = path.resolve(CHAOXING_DIR_URL);
-
-  public get activeCacheDir() {
-    return this._activeCacheDir;
-  }
-
-  public set activeCacheDir(value) {
-    this._activeCacheDir = value;
-  }
+  private activeCacheDir = path.resolve(CHAOXING_DIR_URL);
 
   async init(phone: string) {
-    await this.reLinkCacheDirPath(phone);
+    this.activeCacheDir =
+      await this.reLinkCacheDirPath(phone);
     const dir = await fs.opendir(this.activeCacheDir);
     for await (const dirent of dir) {
       const data = await loadJsonDataForFile(
@@ -39,7 +33,7 @@ export class CacheManager extends Singleton {
   async reLinkCacheDirPath(phone: string) {
     this.activeCacheDir = path.join(
       CHAOXING_DIR_URL,
-      phone,
+      phone ? getStorageDirName(phone) : '',
       'cache',
     );
     await fs.mkdir(this.activeCacheDir, {

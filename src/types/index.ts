@@ -48,6 +48,15 @@ export interface CommandLogin {
   password: string;
   show: boolean;
 }
+export interface CommandWhere {
+  phone: string;
+  global: boolean;
+}
+
+export interface CommandReselect {
+  phone: string;
+  show: boolean;
+}
 
 export interface ChoiceItem {
   index: number;

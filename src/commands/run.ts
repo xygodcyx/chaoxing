@@ -1,3 +1,5 @@
+import * as p from '@clack/prompts';
+
 import dotenv from 'dotenv';
 import os from 'os';
 import path from 'path';
@@ -15,6 +17,7 @@ import type {
 } from '../types/index';
 
 import { registerCommand } from './index';
+import { getStorageDirName, maskPhone } from '../utils';
 
 export async function initUserStatus(
   commandUser: CommandUserInfo = {
@@ -96,49 +99,66 @@ export function registerRunCommand() {
       },
     ],
     async str => {
-      const phone = str.phone;
+      let phone = str.phone;
       if (!phone) {
-        LoggerManager.Instance.error('请提供手机号');
-        return;
+        phone = (await p.password({
+          message: '请输入手机号',
+          // 如果想完全隐藏输入内容（像密码一样）：
+          // type: 'password'
+          validate(value) {
+            if (!value || value.length !== 11)
+              return '手机号格式不正确';
+          },
+        })) as string;
+        if (!phone) {
+          LoggerManager.Instance.error('请提供手机号');
+          return;
+        }
       }
 
-      const envPath = path.resolve(
-        process.env.NODE_ENV === 'production' ?
-          os.homedir()
-        : '',
-        '.chaoxing',
-        phone,
-        '.env',
-      );
-      console.log(envPath)
+      try {
+        const envPath = path.resolve(
+          process.env.NODE_ENV === 'production' ?
+            os.homedir()
+          : '',
+          '.chaoxing',
+          getStorageDirName(phone),
+          '.env',
+        );
 
-      dotenv.config({
-        path: envPath,
-        override: true,
-        quiet: true,
-      });
+        dotenv.config({
+          path: envPath,
+          override: true,
+          quiet: true,
+        });
 
-      const course = str.course;
-      const task = str.task;
-      const show = str.show;
+        const course = str.course;
+        const task = str.task;
+        const show = str.show;
 
-      ConfigManager.Instance.launchOption.headless = !show;
+        ConfigManager.Instance.launchOption.headless =
+          !show;
+        await initUserStatus({
+          phone,
+          course,
+          task,
+        });
 
-      await initUserStatus({
-        phone,
-        course,
-        task,
-      });
+        LoggerManager.Instance.success(
+          `${maskPhone(phone)} 用户初始化成功，开始执行相应的任务`,
+        );
 
-      LoggerManager.Instance.success(
-        `${phone} 用户初始化成功，开始执行相应的任务`,
-      );
+        const action = new Action(
+          DataManager.Instance.userStatus,
+        );
 
-      const action = new Action(
-        DataManager.Instance.userStatus,
-      );
-
-      await action.init();
+        await action.init();
+      } catch (error: any) {
+        LoggerManager.Instance.error(
+          `任务初始化出错：${error.message}`,
+          error,
+        );
+      }
     },
   );
 }
