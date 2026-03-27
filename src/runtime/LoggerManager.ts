@@ -17,12 +17,12 @@ export class LoggerManager extends Singleton {
   static get Instance(): LoggerManager {
     return super.GetInstance<LoggerManager>();
   }
-  // 0	consola.silent() 静默 (Fatal)	几乎不输出，仅输出导致程序崩溃的致命错误。
-  // 1	consola.error()	 错误 (Error)	运行时的严重问题，必须修复。
-  // 2	consola.warn()	 警告 (Warn)	潜在的问题，不影响运行但需要注意。
+  // 0	consola.silent() 静默 (Fatal)	几乎不输出, 仅输出导致程序崩溃的致命错误。
+  // 1	consola.error()	 错误 (Error)	运行时的严重问题, 必须修复。
+  // 2	consola.warn()	 警告 (Warn)	潜在的问题, 不影响运行但需要注意。
   // 3	consola.log()    信息 (Log/Info)	默认级别。程序运行的关键进度说明。
   // 4	consola.debug()	 调试 (Debug)	开发时的详细数据信息。
-  // 5	consola.trace()	 追踪 (Trace)	最详细的日志，包括堆栈、详细步骤等。
+  // 5	consola.trace()	 追踪 (Trace)	最详细的日志, 包括堆栈、详细步骤等。
   constructor() {
     super();
     this.consola = createConsola({
@@ -44,7 +44,7 @@ export class LoggerManager extends Singleton {
     await appendStringToFile(
       path.join(
         CHAOXING_DIR_URL,
-        phone ? getStorageDirName(phone) : '',
+        phone ? phone : '',
         'logs',
         'index.log',
       ),

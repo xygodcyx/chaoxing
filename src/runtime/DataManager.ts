@@ -11,6 +11,7 @@ export class DataManager extends Singleton {
     return super.GetInstance<DataManager>();
   }
 
+  /** info.phone 存储的是加密后的phone */
   public userStatus: UserStatus = {
     info: {
       phone: '',

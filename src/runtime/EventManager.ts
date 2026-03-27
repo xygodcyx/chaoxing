@@ -7,7 +7,7 @@ interface IItem {
 }
 
 /***
- * 事件中心管理类（本质就是一张map，key是事件名称，value是对应事件的函数列表）
+ * 事件中心管理类（本质就是一张map, key是事件名称, value是对应事件的函数列表）
  */
 export default class EventManager extends Singleton {
   static get Instance() {

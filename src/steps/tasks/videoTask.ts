@@ -243,7 +243,7 @@ export async function execVideoTask(
 
     if (!answerResult) {
       LoggerManager.Instance.error(
-        `不知道什么原因，答题没有答对，请前往页面手动检查: ${page.url()} `,
+        `不知道什么原因, 答题没有答对, 请前往页面手动检查: ${page.url()} `,
       );
     }
 

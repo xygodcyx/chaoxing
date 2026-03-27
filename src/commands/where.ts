@@ -40,7 +40,8 @@ export function registerWhereCommand() {
           LoggerManager.Instance.error('请提供手机号');
           return;
         }
-        DataManager.Instance.userStatus.info.phone = phone
+        DataManager.Instance.userStatus.info.phone =
+          getStorageDirName(phone);
         LoggerManager.Instance.success(
           `${path.resolve(CHAOXING_DIR_URL, getStorageDirName(phone))}`,
         );

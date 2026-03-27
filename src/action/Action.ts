@@ -71,7 +71,7 @@ export default class Action {
 
     const authPath = path.resolve(
       `${CHAOXING_DIR_URL}`,
-      getStorageDirName(phone),
+      phone,
       'auth',
       'user.json',
     );
@@ -100,7 +100,7 @@ export default class Action {
     >(`${CACHE_KEY_ENUM.COURSES}`, []);
     if (this.courses.length === 0) {
       this.courses = await enterPersonCenter(this.page);
-      CacheManager.Instance.save(
+      await CacheManager.Instance.save(
         `${CACHE_KEY_ENUM.COURSES}`,
         this.courses,
       );
@@ -132,7 +132,7 @@ export default class Action {
         this.page,
         this.curCourse,
       );
-      CacheManager.Instance.save(
+      await CacheManager.Instance.save(
         `${CACHE_KEY_ENUM.TASKS}-${this.user.curCourseName}`,
         this.tasks,
       );
@@ -159,7 +159,7 @@ export default class Action {
     task?: TaskItem,
   ) {
     this.tasks = await enterCoursePage(page, course);
-    CacheManager.Instance.save(
+    await CacheManager.Instance.save(
       `${CACHE_KEY_ENUM.TASKS}-${this.user.curCourseName}`,
       this.tasks,
     );
@@ -205,7 +205,7 @@ export default class Action {
     }
     if (!page) {
       LoggerManager.Instance.error(
-        '浏览器页面实例丢失，请检查错误...',
+        '浏览器页面实例丢失, 请检查错误...',
       );
       return;
     }
@@ -238,7 +238,7 @@ export default class Action {
 
     if (!page) {
       LoggerManager.Instance.error(
-        '浏览器页面实例丢失，请检查错误...',
+        '浏览器页面实例丢失, 请检查错误...',
       );
       return;
     }

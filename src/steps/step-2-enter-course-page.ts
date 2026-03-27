@@ -10,7 +10,7 @@ export async function enterCoursePage(
   course: CourseItem,
 ) {
   LoggerManager.Instance.start(
-    `进入${course.title} 章节页面，开始获取任务信息...`,
+    `进入${course.title} 章节页面, 开始获取任务信息...`,
   );
 
   await page.goto(course.link);

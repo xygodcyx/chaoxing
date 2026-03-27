@@ -37,7 +37,7 @@ export function registerClearCommand() {
     async str => {
       let phone = str.phone;
       const all = str.all;
-      if (!phone) {
+      if (!phone && !all) {
         phone = (await p.password({
           message: '请输入手机号',
           validate(value) {
@@ -80,7 +80,7 @@ export function registerClearCommand() {
         );
       });
       LoggerManager.Instance.success(
-        `删除缓存成功，共删除${deletedList.length}个文件，共${formatBytes(allSize)}大小`,
+        `删除缓存成功, 共删除${deletedList.length}个文件, 共${formatBytes(allSize)}大小`,
       );
     },
   );

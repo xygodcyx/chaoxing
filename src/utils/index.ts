@@ -10,14 +10,14 @@ import { CHAOXING_DIR_URL } from '../consts';
 import { ConfigManager } from '../runtime/ConfigManager';
 
 /**
- * 将手机号转为唯一的哈希字符串，用于目录名
+ * 将手机号转为唯一的哈希字符串, 用于目录名
  */
 export function getStorageDirName(phone: string): string {
   return createHash('md5')
     .update(phone)
     .digest('hex')
     .slice(0, 16);
-  // 取前16位足够区分，且路径不会太长
+  // 取前16位足够区分, 且路径不会太长
 }
 
 export function maskPhone(phone: string) {
@@ -114,7 +114,7 @@ export async function loadStringForFile(
   const isExist = await isFileExist(filePath);
   if (!isExist) {
     await LoggerManager.Instance.warn(
-      `目录或文件不存在: ${filePath}，无法读取，返回默认值: ${defaultValue}`,
+      `目录或文件不存在: ${filePath}, 无法读取, 返回默认值: ${defaultValue}`,
     );
     return defaultValue;
   }
@@ -138,7 +138,7 @@ export async function loadJsonDataForFile<T>(
   const isExist = await isFileExist(filePath);
   if (!isExist) {
     await LoggerManager.Instance.warn(
-      `目录或文件不存在: ${filePath}，无法读取，返回默认值: ${defaultValue}`,
+      `目录或文件不存在: ${filePath}, 无法读取, 返回默认值: ${defaultValue}`,
     );
     return defaultValue;
   }
@@ -182,7 +182,7 @@ export function resumeBar(
   total: number,
   current: number,
 ) {
-  // 重新启动，它会从上一行继续开始绘制
+  // 重新启动, 它会从上一行继续开始绘制
   bar.start(total, current);
 }
 

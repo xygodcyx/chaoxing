@@ -13,7 +13,7 @@ import { DataManager } from '../runtime/DataManager';
 
 export async function enterPersonCenter(page: Page) {
   LoggerManager.Instance.start(
-    `进入个人中心页面，开始获取课程信息...`,
+    `进入个人中心页面, 开始获取课程信息...`,
   );
 
   await page.goto(
@@ -46,7 +46,7 @@ export async function enterPersonCenter(page: Page) {
     .includes('mooc1-2.chaoxing.com/visit/courses/study');
   if (isOldVersion) {
     LoggerManager.Instance.warn(
-      '当前页面为旧版本，进入新版本页面执行任务',
+      '当前页面为旧版本, 进入新版本页面执行任务',
     );
     const newVersionUrl = page
       .url()
@@ -119,7 +119,7 @@ export async function enterPersonCenter(page: Page) {
   // Do stuff
   const additionalCourses = await multiselect({
     message: '选择要刷的课程',
-    initialValues: [initialCourse],
+    initialValues: initialCourse ? [initialCourse] : [],
     options,
     required: true,
   });

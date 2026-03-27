@@ -8,6 +8,7 @@ import { CacheManager } from '../runtime/CacheManager';
 import { CACHE_KEY_ENUM } from '../enum';
 import { LoggerManager } from '../runtime/LoggerManager';
 import { ConfigManager } from '../runtime/ConfigManager';
+import { getStorageDirName } from '../utils';
 
 export function registerLoginCommand() {
   registerCommand<CommandLogin>(
@@ -31,7 +32,7 @@ export function registerLoginCommand() {
         long: 'show',
         type: '',
         description:
-          '启动图形化浏览器，查看实时运行状态（需要图形化操作系统）',
+          '启动图形化浏览器, 查看实时运行状态（需要图形化操作系统）',
       },
     ],
     async str => {
@@ -72,9 +73,10 @@ export function registerLoginCommand() {
       }
 
       try {
-        DataManager.Instance.userStatus.info.phone = phone;
+        DataManager.Instance.userStatus.info.phone =
+          getStorageDirName(phone);
         await CacheManager.Instance.reLinkCacheDirPath(
-          phone,
+          getStorageDirName(phone),
         );
         await CacheManager.Instance.save(
           `${CACHE_KEY_ENUM.USER_STATUS}`,

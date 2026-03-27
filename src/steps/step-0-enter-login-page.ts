@@ -46,7 +46,7 @@ export async function enterLoginPage(
     try {
       // 2. 使用 Promise.race 监听两种可能的结果
       await Promise.race([
-        // 情况 A：发现错误提示元素（设置一个较短的超时，比如 3 秒）
+        // 情况 A：发现错误提示元素（设置一个较短的超时, 比如 3 秒）
         page
           .waitForSelector('.err-tip', {
             state: 'visible',
@@ -67,20 +67,20 @@ export async function enterLoginPage(
             .locator('.err-tip')
             .textContent();
           LoggerManager.Instance.error(
-            `登录失败，请检查原因: ${errTip?.trim()}`,
+            `登录失败, 请检查原因: ${errTip?.trim()}`,
           );
           process.exit(0);
         }
 
         // End of authentication steps.
         LoggerManager.Instance.start(
-          '登录成功，正在保存会话状态...',
+          '登录成功, 正在保存会话状态...',
         );
       });
     } catch (e) {
       // 处理超时或其他意外情况
       LoggerManager.Instance.error(
-        '登录响应超时，请检查网络或验证码状态',
+        '登录响应超时, 请检查网络或验证码状态',
       );
       process.exit(1);
     }

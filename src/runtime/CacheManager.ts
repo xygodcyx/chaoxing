@@ -7,6 +7,7 @@ import {
   loadJsonDataForFile,
   saveJsonDataToFile,
 } from '../utils/index';
+import { LoggerManager } from './LoggerManager';
 
 export class CacheManager extends Singleton {
   static get Instance(): CacheManager {
@@ -20,6 +21,7 @@ export class CacheManager extends Singleton {
   async init(phone: string) {
     this.activeCacheDir =
       await this.reLinkCacheDirPath(phone);
+
     const dir = await fs.opendir(this.activeCacheDir);
     for await (const dirent of dir) {
       const data = await loadJsonDataForFile(
@@ -33,7 +35,7 @@ export class CacheManager extends Singleton {
   async reLinkCacheDirPath(phone: string) {
     this.activeCacheDir = path.join(
       CHAOXING_DIR_URL,
-      phone ? getStorageDirName(phone) : '',
+      phone,
       'cache',
     );
     await fs.mkdir(this.activeCacheDir, {
@@ -43,6 +45,12 @@ export class CacheManager extends Singleton {
   }
 
   async save(key: string, data: unknown) {
+    if (!data) {
+      LoggerManager.Instance.error(
+        `传入的 data 数据为空: ${this.activeCacheDir} , 跳过写入`,
+      );
+      return;
+    }
     this.cacheMap.set(key, data);
     return await saveJsonDataToFile(
       path.resolve(this.activeCacheDir, key),

@@ -34,9 +34,9 @@ export async function enterTaskPage(
 
   /**
    * 首次进入第一个页面的几种情况
-   * 1.学习目标，直接跳过（一般是混在很多任务点中的第一个任务点，所以要num + 1进到下一个任务点）
-   * 2.阅读页面，点击后等待几秒直接跳过（一般是独立的一个任务点）
-   * 3.问卷调查，直接跳过（一般是独立的一个任务点）
+   * 1.学习目标, 直接跳过（一般是混在很多任务点中的第一个任务点, 所以要num + 1进到下一个任务点）
+   * 2.阅读页面, 点击后等待几秒直接跳过（一般是独立的一个任务点）
+   * 3.问卷调查, 直接跳过（一般是独立的一个任务点）
    */
   if (pageTitle === '学习目标') {
     LoggerManager.Instance.info(
@@ -63,7 +63,7 @@ export async function enterTaskPage(
 
   pageTitle = await page.title();
 
-  // 如果第一个任务点是学习目标页，那么就会自动跳过从而进入到这里，如果第一个就是视频页，那也会进入到这里
+  // 如果第一个任务点是学习目标页, 那么就会自动跳过从而进入到这里, 如果第一个就是视频页, 那也会进入到这里
   if (pageTitle === '视频' || pageTitle === '课程') {
     await execVideoTask(page, task, searchObj);
   } else {

@@ -95,7 +95,7 @@ export function registerRunCommand() {
         long: 'show',
         type: '',
         description:
-          '启动图形化浏览器，查看实时运行状态（需要图形化操作系统）',
+          '启动图形化浏览器, 查看实时运行状态（需要图形化操作系统）',
       },
     ],
     async str => {
@@ -110,6 +110,7 @@ export function registerRunCommand() {
               return '手机号格式不正确';
           },
         })) as string;
+
         if (!phone) {
           LoggerManager.Instance.error('请提供手机号');
           return;
@@ -138,14 +139,15 @@ export function registerRunCommand() {
 
         ConfigManager.Instance.launchOption.headless =
           !show;
+
         await initUserStatus({
-          phone,
+          phone: getStorageDirName(phone),
           course,
           task,
         });
 
         LoggerManager.Instance.success(
-          `${maskPhone(phone)} 用户初始化成功，开始执行相应的任务`,
+          `${maskPhone(phone)} 用户初始化成功, 开始执行相应的任务`,
         );
 
         const action = new Action(

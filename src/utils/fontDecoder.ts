@@ -3,17 +3,13 @@ import fs from 'fs/promises';
 import { LoggerManager } from '../runtime/LoggerManager';
 import path from 'path';
 
-// 开发环境实时生成mapping，生产环境直接使用
+// 开发环境实时生成mapping, 生产环境直接使用
 export async function decodeFont(
   base64Font: string,
   encryptedText: string,
 ) {
   // 2. 替换字符串
   if (process.env.NODE_ENV === 'production') {
-    return encryptedText
-      .split('')
-      .map(char => (MappingData as any)[char] || char)
-      .join('');
   }
 
   try {
@@ -47,4 +43,13 @@ export async function decodeFont(
     );
     return encryptedText;
   }
+}
+
+export async function decodeFontInProd(
+  encryptedText: string,
+) {
+  return encryptedText
+    .split('')
+    .map(char => (MappingData as any)[char] || char)
+    .join('');
 }

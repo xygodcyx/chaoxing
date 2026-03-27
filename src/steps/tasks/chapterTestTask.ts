@@ -14,7 +14,10 @@ import {
   waitAlways,
   waitForRandomTime,
 } from '../../utils';
-import { decodeFont } from '../../utils/fontDecoder';
+import {
+  decodeFont,
+  decodeFontInProd,
+} from '../../utils/fontDecoder';
 import { fetchAnswersFromAI } from '../../utils/ai';
 
 export async function execChapterTestTask(
@@ -23,11 +26,11 @@ export async function execChapterTestTask(
 ) {
   // TODO 完成章节测验的自动答题功能
   LoggerManager.Instance.start(
-    `当前为 ${task.title} 的章节测验页面, 开始执行任务`,
+    `当前为 ${task.title} 的章节测验页面, 开始执行任务...`,
   );
   if (!process.env.DEEPSEEK_API_KEY) {
     LoggerManager.Instance.warn(
-      `没有 DEEPSEEK_API_KEY ，无法执行自动答任务，请前往deepseek官网生成DEEPSEEK_API_KEY: https://platform.deepseek.com/DEEPSEEK_API_KEYs`,
+      `没有 DEEPSEEK_API_KEY , 无法执行自动答任务, 请前往deepseek官网生成DEEPSEEK_API_KEY: https://platform.deepseek.com/DEEPSEEK_API_KEYs`,
     );
     LoggerManager.Instance.warn(
       '请运行 "chaoxing where" 命令前往配置目录编辑.env文件并添加DEEPSEEK_API_KEY字段, eg: DEEPSEEK_API_KEY=sk-xxxxxxxxxxxx',
@@ -49,7 +52,8 @@ export async function execChapterTestTask(
   const status = await finalQuizFrame
     .locator('.testTit_status')
     .textContent();
-  if (status === '已完成') {
+
+  if (status === '已完成' || status === 'Completed') {
     LoggerManager.Instance.success(
       `${task.title} 刷完啦, 开始刷下一个`,
     );
@@ -79,16 +83,22 @@ export async function execChapterTestTask(
 
   let subjectLocIndexOffset = 0;
 
-  const temp = (
-    await finalQuizFrame
-      .locator('#cxSecretStyle')
-      .innerHTML()
-  ).split('font-ttf;charset=utf-8;base64,');
-
+  // 答完题后不加载加密字体
   let fontBase64 = '';
+  const cxSecretStyleLocal = finalQuizFrame.locator(
+    '#cxSecretStyle',
+  );
 
-  if (temp.length > 1) {
-    fontBase64 = temp[1].split("')")[0];
+  const cxSecretStyleCount =
+    await cxSecretStyleLocal.count();
+
+  if (cxSecretStyleCount > 0) {
+    let cxSecretStyle = (
+      await cxSecretStyleLocal.innerHTML()
+    ).split('font-ttf;charset=utf-8;base64,');
+    if (cxSecretStyle.length > 1) {
+      fontBase64 = cxSecretStyle[1].split("')")[0];
+    }
   }
 
   let choiceIndex = 0;
@@ -111,11 +121,10 @@ export async function execChapterTestTask(
         )?.trim() || '';
       const cleanedTitle = cleanString(subjectTitle);
 
-      const decodeTitle = await decodeFont(
-        fontBase64,
-        cleanedTitle,
-      );
-
+      let decodeTitle =
+        fontBase64 ?
+          await decodeFont(fontBase64, cleanedTitle)
+        : await decodeFontInProd(cleanedTitle);
       const choiceLocs = await subjectLoc
         .locator(
           subjectType === '多选题' ?
@@ -158,7 +167,7 @@ export async function execChapterTestTask(
   LoggerManager.Instance.debug(
     `${task.title} 的题目数量：${subjectList.length}`,
   );
-  
+
   LoggerManager.Instance.debug(
     `${task.title} 题目的所有选项数量：${allChoiceLocs.length}`,
   );
@@ -184,7 +193,7 @@ export async function execChapterTestTask(
     .locator('.achievement i')
     .textContent();
   LoggerManager.Instance.success(
-    `答题完成，本次成绩：${achievement} 分`,
+    `答题完成, 本次成绩：${achievement} 分`,
   );
   // await waitAlways();
   await waitForRandomTime(2000);

@@ -1,4 +1,3 @@
-
 import { registerCommand } from './index';
 
 import type { CommandReselect } from '../types/index';
@@ -6,6 +5,7 @@ import { LoggerManager } from '../runtime/LoggerManager';
 import {
   formatBytes,
   getLoggedChromePage,
+  getStorageDirName,
 } from '../utils/index';
 import type { Dirent, Stats } from 'fs';
 import { ConfigManager } from '../runtime/ConfigManager';
@@ -35,7 +35,7 @@ export function registerReselectCommand() {
       }
       try {
         await CacheManager.Instance.reLinkCacheDirPath(
-          phone,
+          getStorageDirName(phone),
         );
         const { browser, page } =
           await getLoggedChromePage(phone);
