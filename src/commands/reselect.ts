@@ -1,3 +1,4 @@
+import * as p from '@clack/prompts';
 import { registerCommand } from './index';
 
 import type { CommandReselect } from '../types/index';
@@ -22,16 +23,25 @@ export function registerReselectCommand() {
         short: 'p',
         long: 'phone',
         type: 'string',
-        description: '要重新选择课程用户的手机号',
+        description: '要重新选择课程的手机号',
       },
     ],
     async str => {
-      const phone = str.phone;
+      let phone = str.phone;
       const show = str.show;
       ConfigManager.Instance.launchOption.headless = !show;
       if (!phone) {
-        LoggerManager.Instance.error('请提供手机号');
-        return;
+        phone = (await p.password({
+          message: '请输入手机号',
+          validate(value) {
+            if (!value || value.length !== 11)
+              return '手机号格式不正确';
+          },
+        })) as string;
+        if (!phone) {
+          LoggerManager.Instance.error('请提供手机号');
+          return;
+        }
       }
       try {
         await CacheManager.Instance.reLinkCacheDirPath(
