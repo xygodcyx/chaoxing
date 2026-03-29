@@ -3,11 +3,75 @@ import type { Page } from 'playwright';
 import fs from 'fs/promises';
 import path from 'path';
 import { createHash } from 'crypto';
-
 import { LoggerManager } from '../runtime/LoggerManager';
 import { SingleBar } from 'cli-progress';
 import { CHAOXING_DIR_URL } from '../consts';
 import { ConfigManager } from '../runtime/ConfigManager';
+import type { SafeCallConfig } from '../types';
+
+/**
+ * 自动处理错误、自动重试、确保程序不崩溃的执行容器
+ * @param fn 要执行的异步函数
+ * @param config 配置项
+ * @returns 返回函数结果，若最终失败则返回 null
+ */
+export async function safeCallFunc<T>(
+  fn: () => Promise<T>,
+  config: SafeCallConfig = {},
+): Promise<T | null> {
+  const {
+    message = '',
+    retries = 10,
+    delay = 2000,
+    silent = false,
+    exponential = true,
+  } = config;
+
+  let lastError: any;
+  const errors = [];
+
+  for (let attempt = 1; attempt <= retries + 1; attempt++) {
+    try {
+      const res = await fn();
+      attempt !== 1 &&
+        LoggerManager.Instance.success(
+          `经过${attempt - 1}次尝试后，任务重新执行成功`,
+        );
+      return res;
+    } catch (error: any) {
+      lastError = error;
+      errors.push(error);
+
+      // 如果还没达到最大重试次数，则进行等待
+      if (attempt <= retries) {
+        const waitTime =
+          exponential ?
+            delay * Math.pow(2, attempt - 1)
+          : delay;
+
+        LoggerManager.Instance.warn(
+          `${message ? `${message}` : '操作失败'} (尝试次数: ${attempt}/${retries}): ${error.message}。 将在 ${waitTime}ms 后重试...`,
+        );
+
+        await waitForRandomTime(waitTime);
+      }
+    }
+  }
+
+  // 最终失败处理
+  if (!silent) {
+    LoggerManager.Instance.error(
+      `程序执行异常，重试 ${retries} 次后仍未成功: ${lastError?.message || '未知错误'}，历史错误:${errors
+        .slice(0, -1)
+        .map(error => error.message)
+        .join('\r\n')}
+      `,
+      lastError,
+    );
+  }
+
+  return null;
+}
 
 /**
  * 将手机号转为唯一的哈希字符串, 用于目录名

@@ -1,12 +1,16 @@
 import * as p from '@clack/prompts';
 import { registerCommand } from './index';
 
-import type { CommandReselect } from '../types/index';
+import type {
+  CommandReselect,
+  CourseItem,
+} from '../types/index';
 import { LoggerManager } from '../runtime/LoggerManager';
 import {
   formatBytes,
   getLoggedChromePage,
   getStorageDirName,
+  safeCallFunc,
 } from '../utils/index';
 import type { Dirent, Stats } from 'fs';
 import { ConfigManager } from '../runtime/ConfigManager';
@@ -49,7 +53,10 @@ export function registerReselectCommand() {
         );
         const { browser, page } =
           await getLoggedChromePage(phone);
-        const courses = await enterPersonCenter(page);
+        const courses = await safeCallFunc<CourseItem[]>(
+          async () => await enterPersonCenter(page),
+          { message: '重选课程出错' },
+        );
         await CacheManager.Instance.save(
           `${CACHE_KEY_ENUM.COURSES}`,
           courses,

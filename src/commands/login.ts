@@ -8,7 +8,7 @@ import { CacheManager } from '../runtime/CacheManager';
 import { CACHE_KEY_ENUM } from '../enum';
 import { LoggerManager } from '../runtime/LoggerManager';
 import { ConfigManager } from '../runtime/ConfigManager';
-import { getStorageDirName } from '../utils';
+import { getStorageDirName, safeCallFunc } from '../utils';
 
 export function registerLoginCommand() {
   registerCommand<CommandLogin>(
@@ -72,23 +72,23 @@ export function registerLoginCommand() {
         }
       }
 
-      try {
-        DataManager.Instance.userStatus.info.phone =
-          getStorageDirName(phone);
-        await CacheManager.Instance.reLinkCacheDirPath(
-          getStorageDirName(phone),
-        );
-        await CacheManager.Instance.save(
-          `${CACHE_KEY_ENUM.USER_STATUS}`,
-          DataManager.Instance.userStatus,
-        );
-        await enterLoginPage(phone, password);
-      } catch (error: any) {
-        LoggerManager.Instance.error(
-          `登录出错：${error.message}`,
-          error,
-        );
-      }
+      DataManager.Instance.userStatus.info.phone =
+        getStorageDirName(phone);
+
+      await CacheManager.Instance.reLinkCacheDirPath(
+        getStorageDirName(phone),
+      );
+      await CacheManager.Instance.save(
+        `${CACHE_KEY_ENUM.USER_STATUS}`,
+        DataManager.Instance.userStatus,
+      );
+
+      await safeCallFunc(
+        async () => await enterLoginPage(phone, password),
+        {
+          message: '执行 登录任务 时失败',
+        },
+      );
     },
   );
 }

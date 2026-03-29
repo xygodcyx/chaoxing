@@ -37,7 +37,7 @@ export default class EventManager extends Singleton {
   once(event: EVENT, func: Function, ctx?: unknown) {
     const run = (...params: unknown[]) => {
       ctx ? func.apply(ctx, params) : func(...params);
-      this.off(event, func);
+      this.off(event, run);
     };
     this.on(event, run);
   }

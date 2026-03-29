@@ -58,7 +58,7 @@ export async function enterPersonCenter(page: Page) {
     await page.waitForLoadState('domcontentloaded');
   }
 
-  await page.waitForSelector('#courseList');
+  await page.waitForSelector('.course-list');
 
   const coursesLoc = await page.locator('.course').all();
 

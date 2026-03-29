@@ -76,3 +76,11 @@ export interface SubjectItem {
   title: string;
   choices: Array<ChoiceItem>;
 }
+
+export interface SafeCallConfig {
+  message?: string; // 额外信息
+  retries?: number; // 最大重试次数
+  delay?: number; // 基础延迟时间 (ms)
+  silent?: boolean; // 是否静默处理（不打印 error 级别的日志）
+  exponential?: boolean; // 是否启用指数退避 (即重试时间翻倍)
+}

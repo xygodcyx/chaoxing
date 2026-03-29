@@ -30,6 +30,8 @@ import { execChapterTestTask } from '../steps/tasks/chapterTestTask';
 import {
   getElementIndexInArray,
   getStorageDirName,
+  maskPhone,
+  safeCallFunc,
 } from '../utils';
 
 export default class Action {
@@ -38,10 +40,10 @@ export default class Action {
   public browser!: Browser;
   public page!: Page;
 
-  public courses: Array<CourseItem> = [];
+  public courses: Array<CourseItem> | null = [];
   public curCourse!: CourseItem;
 
-  public tasks: Array<TaskItem> = [];
+  public tasks: Array<TaskItem> | null = [];
   public curTask!: TaskItem;
 
   constructor(user: UserStatus) {
@@ -99,11 +101,20 @@ export default class Action {
       Array<CourseItem>
     >(`${CACHE_KEY_ENUM.COURSES}`, []);
     if (this.courses.length === 0) {
-      this.courses = await enterPersonCenter(this.page);
+      this.courses = await safeCallFunc<CourseItem[]>(
+        async () => await enterPersonCenter(this.page),
+      );
       await CacheManager.Instance.save(
         `${CACHE_KEY_ENUM.COURSES}`,
         this.courses,
       );
+    }
+
+    if (!this.courses) {
+      LoggerManager.Instance.error(
+        '致命错误，获取课程失败',
+      );
+      return;
     }
 
     if (this.courses.length === 0) {
@@ -128,14 +139,18 @@ export default class Action {
     );
 
     if (this.tasks.length === 0) {
-      this.tasks = await enterCoursePage(
-        this.page,
-        this.curCourse,
+      this.tasks = await safeCallFunc<TaskItem[]>(
+        async () =>
+          await enterCoursePage(this.page, this.curCourse),
       );
       await CacheManager.Instance.save(
         `${CACHE_KEY_ENUM.TASKS}-${this.user.curCourseName}`,
         this.tasks,
       );
+    }
+    if (!this.tasks) {
+      LoggerManager.Instance.warn('没有任务要被执行');
+      return;
     }
 
     if (this.tasks.length === 0) {
@@ -150,7 +165,10 @@ export default class Action {
 
     await this.updateCurTaskState();
 
-    enterTaskPage(this.page, this.curTask);
+    safeCallFunc(
+      async () =>
+        await enterTaskPage(this.page, this.curTask),
+    );
   }
 
   async startCourseTask(
@@ -168,7 +186,9 @@ export default class Action {
       return;
     }
     this.curTask = task || this.tasks[0];
-    enterTaskPage(page, this.curTask);
+    safeCallFunc(
+      async () => await enterTaskPage(page, this.curTask),
+    );
   }
 
   async onVideoTaskDone(
@@ -198,7 +218,12 @@ export default class Action {
     await page.waitForLoadState('domcontentloaded');
     const pageTitle = await page.title();
     if (pageTitle === '章节测验') {
-      await execChapterTestTask(page, task);
+      await safeCallFunc(
+        async () => await execChapterTestTask(page, task),
+        {
+          message: '执行 章节测验 时失败',
+        },
+      );
     }
   }
 
@@ -207,6 +232,12 @@ export default class Action {
     LoggerManager.Instance.success(
       `已经完成的任务： ${curCourse.title}(${curCourse.index + 1}) - ${task.title}(${task.index + 1})`,
     );
+    if (!tasks) {
+      LoggerManager.Instance.error(
+        '任务为null, 请检查错误...',
+      );
+      return;
+    }
     if (task.index === tasks.length - 1) {
       LoggerManager.Instance.box(
         ` ${this.curCourse?.title} 的任务全部刷完啦`,
@@ -227,7 +258,9 @@ export default class Action {
 
     this.updateCurTaskState();
 
-    enterTaskPage(page, this.curTask);
+    safeCallFunc(
+      async () => await enterTaskPage(page, this.curTask),
+    );
   }
 
   onCourseDone(course: CourseItem) {
@@ -236,6 +269,13 @@ export default class Action {
     LoggerManager.Instance.success(
       `已经完成的课程： ${course.title}(${course.index + 1})`,
     );
+
+    if (!courses) {
+      LoggerManager.Instance.error(
+        '致命错误，获取课程失败',
+      );
+      return;
+    }
     const index = getElementIndexInArray(
       course,
       courses,
@@ -261,7 +301,10 @@ export default class Action {
 
     this.updateCurCourseState();
 
-    this.startCourseTask(page, this.curCourse);
+    safeCallFunc(
+      async () =>
+        await this.startCourseTask(page, this.curCourse),
+    );
   }
 
   async updateCurCourseState() {

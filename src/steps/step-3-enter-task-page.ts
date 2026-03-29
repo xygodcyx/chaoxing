@@ -7,6 +7,7 @@ import { EVENTS_ENUM } from '../enum/index';
 import { LoggerManager } from '../runtime/LoggerManager';
 import { execVideoTask } from './tasks/videoTask';
 import { execReadTask } from './tasks/readTask';
+import { safeCallFunc } from '../utils';
 
 export async function enterTaskPage(
   page: Page,
@@ -57,7 +58,12 @@ export async function enterTaskPage(
     EventManager.Instance.emit(EVENTS_ENUM.TASK_DONE, task);
     return;
   } else if (task.title === '阅读') {
-    await execReadTask(page, task);
+    await safeCallFunc(
+      async () => await execReadTask(page, task),
+      {
+        message: '执行 阅读任务 时失败',
+      },
+    );
     return;
   }
 
@@ -65,7 +71,13 @@ export async function enterTaskPage(
 
   // 如果第一个任务点是学习目标页, 那么就会自动跳过从而进入到这里, 如果第一个就是视频页, 那也会进入到这里
   if (pageTitle === '视频' || pageTitle === '课程') {
-    await execVideoTask(page, task, searchObj);
+    await safeCallFunc(
+      async () =>
+        await execVideoTask(page, task, searchObj),
+      {
+        message: '执行 视频任务 时失败',
+      },
+    );
   } else {
     const pageTitle = await page.title();
     const pageUrl = page.url();
