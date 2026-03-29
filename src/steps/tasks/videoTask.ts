@@ -11,7 +11,7 @@ import {
   resumeBar,
   waitAlways,
 } from '../../utils';
-import { execAnswerQuestionTask } from './answerVideoQuestionTask';
+import { execAnswerQuestionTask } from './videoQuestionTask';
 
 export async function execVideoTask(
   page: Page,
