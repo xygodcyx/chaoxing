@@ -14,13 +14,13 @@
     "chaoxing": "dist/index.js"
   },
   "files": [
-    "dist",
-    "README.md"
+    "dist"
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/xygodcyx/chaoxing.git"
+    "url": "git+https://github.com/xygodcyx/chaoxing.git"
   },
+  "homepage": "https://github.com/xygodcyx/chaoxing#readme",
   "keywords": [
     "chaoxing",
     "playwright",
