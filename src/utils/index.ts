@@ -50,7 +50,7 @@ export async function safeCallFunc<T>(
           : delay;
 
         LoggerManager.Instance.warn(
-          `${message ? `${message}` : '操作失败'} (尝试次数: ${attempt}/${retries}): ${error.message}。 将在 ${waitTime}ms 后重试...`,
+          `${message ? `${message}` : '操作失败'} (尝试次数: ${attempt}/${retries}), 错误原因: ${error.message}。 将在 ${waitTime}ms 后重试...`,
         );
 
         await waitForRandomTime(waitTime);

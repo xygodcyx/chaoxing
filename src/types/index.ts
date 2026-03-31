@@ -47,6 +47,8 @@ export interface CommandClear {
 export interface CommandLogin {
   phone: string;
   password: string;
+  verification: boolean;
+  qrcode: boolean;
   show: boolean;
 }
 export interface CommandWhere {

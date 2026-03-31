@@ -28,6 +28,16 @@ export function registerLoginCommand() {
         description: '密码',
       },
       {
+        short: 'v',
+        long: 'verification',
+        description: '使用验证码登录',
+      },
+      {
+        short: 'q',
+        long: 'qrcode',
+        description: '使用超星APP扫码登录',
+      },
+      {
         short: 's',
         long: 'show',
         type: '',
@@ -41,6 +51,10 @@ export function registerLoginCommand() {
       const show = str.show;
 
       ConfigManager.Instance.launchOption.headless = !show;
+      ConfigManager.Instance.launchOption.isLoginWithQrCode =
+        str.qrcode;
+      ConfigManager.Instance.launchOption.isLoginWithVerification =
+        str.verification;
 
       if (!phone) {
         phone = (await p.password({
@@ -58,7 +72,7 @@ export function registerLoginCommand() {
         }
       }
 
-      if (!password) {
+      if (!str.qrcode && !str.verification && !password) {
         password = (await p.password({
           message: '请输入密码',
           // 如果想完全隐藏输入内容（像密码一样）：
@@ -71,6 +85,8 @@ export function registerLoginCommand() {
           return;
         }
       }
+      DataManager.Instance.password =
+        str.password || password;
 
       DataManager.Instance.userStatus.info.phone =
         getStorageDirName(phone);
@@ -78,13 +94,14 @@ export function registerLoginCommand() {
       await CacheManager.Instance.reLinkCacheDirPath(
         getStorageDirName(phone),
       );
+
       await CacheManager.Instance.save(
         `${CACHE_KEY_ENUM.USER_STATUS}`,
         DataManager.Instance.userStatus,
       );
 
       await safeCallFunc(
-        async () => await enterLoginPage(phone, password),
+        async () => await enterLoginPage(phone),
         {
           message: '执行 登录任务 时失败',
         },

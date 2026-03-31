@@ -9,7 +9,7 @@ export async function decodeFont(
   encryptedText: string,
 ) {
   // 2. 替换字符串
-  if (process.env.NODE_ENV === 'production') {
+  if (true || process.env.NODE_ENV === 'production') {
     return encryptedText
       .split('')
       .map(char => (MappingData as any)[char] || char)

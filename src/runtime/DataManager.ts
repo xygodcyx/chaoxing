@@ -20,6 +20,10 @@ export class DataManager extends Singleton {
     curTaskName: '',
   };
 
+  public lastQrCodeImagePath = ''
+  
+  public password: string = '';
+
   public onlyVideoMode: boolean = false;
 
   public globalTaskLink: string = '';

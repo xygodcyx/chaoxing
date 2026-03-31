@@ -2,10 +2,15 @@ import type { LaunchOptions } from 'playwright';
 import config from '../config';
 import Singleton from '../base/Singleton';
 
+interface Options extends LaunchOptions {
+  isLoginWithQrCode?: boolean;
+  isLoginWithVerification?: boolean;
+}
+
 export class ConfigManager extends Singleton {
   static get Instance(): ConfigManager {
     return super.GetInstance<ConfigManager>();
   }
 
-  public launchOption: LaunchOptions = config;
+  public launchOption: Options = { ...config };
 }

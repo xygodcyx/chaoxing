@@ -179,7 +179,14 @@ export async function execChapterTestTask(
     `${task.title} 题目的所有选项数量：${allChoiceLocs.length}`,
   );
 
-  const aiAnswers = await fetchAnswersFromAI(subjectList);
+  const aiAnswers: number[] = [];
+  for (const subject of subjectList) {
+    const answer = await fetchAnswersFromAI(subject);
+    aiAnswers.push(...answer);
+    await LoggerManager.Instance.info(
+      `AI为题目: ${subject.title} 返回了答案: ${answer} , 题目网页:${page.url()}`,
+    );
+  }
 
   LoggerManager.Instance.info(
     `AI 返回了答案: ${JSON.stringify(aiAnswers)} , 题目网页:${page.url()}`,
