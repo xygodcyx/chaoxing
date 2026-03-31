@@ -1,6 +1,6 @@
 {
   "name": "chaoxing",
-  "version": "1.2.7",
+  "version": "1.2.8",
   "type": "module",
   "description": "自动刷超星网课",
   "main": "dist/index.js",
