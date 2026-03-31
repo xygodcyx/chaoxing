@@ -1,12 +1,19 @@
-# 排除本地打包产物（重要！）
-*.tgz
-# 排除测试截图
-*.png
-# 排除环境变量
-.env
-# 排除数据目录
-.chaoxing/
-# 排除 vscode 配置
-.vscode/
 
-# 保留默认必含文件 (README.md, LICENSE, package.json 会自动包含，不需要写在这)
+# Playwright
+node_modules/
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+/playwright/.auth/
+
+playwright/.auth
+
+playwright-user-data
+
+logs
+*.env
+
+cache
+
+.chaoxing
