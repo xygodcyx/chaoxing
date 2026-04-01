@@ -37,6 +37,7 @@ export interface CommandRun {
   task: string;
   show: boolean;
   onlyVideo: boolean;
+  force: boolean;
 }
 
 export interface CommandClear {

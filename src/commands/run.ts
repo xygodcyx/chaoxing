@@ -101,6 +101,11 @@ export function registerRunCommand() {
         long: 'onlyVideo',
         description: '只刷视频不答题',
       },
+      {
+        short: 'f',
+        long: 'force',
+        description: '强制从视频开头开始重新刷',
+      },
     ],
     async str => {
       let phone = str.phone;
@@ -144,6 +149,9 @@ export function registerRunCommand() {
 
         ConfigManager.Instance.launchOption.headless =
           !show;
+
+        ConfigManager.Instance.launchOption.forceStart =
+          str.force;
 
         await initUserStatus({
           phone: getStorageDirName(phone),

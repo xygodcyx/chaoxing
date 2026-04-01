@@ -12,6 +12,7 @@ import {
   waitAlways,
 } from '../../utils';
 import { execAnswerQuestionTask } from './videoQuestionTask';
+import { ConfigManager } from '../../runtime/ConfigManager';
 
 export async function execVideoTask(
   page: Page,
@@ -102,7 +103,10 @@ export async function execVideoTask(
     .locator('video')
     .evaluate(
       async (video: HTMLVideoElement, d: number) => {
-        video.currentTime = d - 0.1;
+        video.currentTime =
+          ConfigManager.Instance.launchOption.forceStart ?
+            0
+          : d - 0.1;
       },
       DURATION,
     );
