@@ -70,7 +70,11 @@ export async function enterTaskPage(
   pageTitle = await page.title();
 
   // 如果第一个任务点是学习目标页, 那么就会自动跳过从而进入到这里, 如果第一个就是视频页, 那也会进入到这里
-  if (pageTitle === '视频' || pageTitle === '课程') {
+  if (
+    pageTitle === '视频' ||
+    pageTitle === '课程' ||
+    pageTitle === ''
+  ) {
     await safeCallFunc(
       async () =>
         await execVideoTask(page, task, searchObj),
