@@ -97,6 +97,7 @@ chaoxing run -o
 | `--task` | `-t` | `string` | 指定章节开始位置 |
 | `--show` | `-s` | `boolean` | 显示浏览器界面（用于手动处理验证码） |
 | `--onlyVideo` | `-o` | `boolean` | 只刷视频不答题 |
+| `--force` | `-s` | `boolean` | 强制视频从开头开始刷（当进度没有同步的时候使用） |
 
 ### 2. 管理命令
 
