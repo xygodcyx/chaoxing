@@ -98,18 +98,17 @@ export async function execVideoTask(
       },
     );
 
-  // 尝试直接快进到末尾
-  await frameLoc
-    .locator('video')
-    .evaluate(
-      async (video: HTMLVideoElement, d: number) => {
-        video.currentTime =
-          ConfigManager.Instance.launchOption.forceStart ?
-            0
-          : d - 0.1;
-      },
-      DURATION,
-    );
+  const cutDuration =
+    ConfigManager.Instance.launchOption.forceStart ?
+      DURATION
+    : 0.1;
+  await frameLoc.locator('video').evaluate(
+    async (video: HTMLVideoElement, params) => {
+      video.currentTime =
+        params.duration - params.cutDuration;
+    },
+    { duration: DURATION, cutDuration },
+  );
 
   let isInTopicPanel = false;
 
