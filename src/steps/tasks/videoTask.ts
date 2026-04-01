@@ -79,7 +79,7 @@ export async function execVideoTask(
           resolve => (video.onloadedmetadata = resolve),
         );
       }
-      video.playbackRate = 2;
+      video.playbackRate = 1;
       return video.duration;
     },
   );
