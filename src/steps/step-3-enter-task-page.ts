@@ -57,7 +57,11 @@ export async function enterTaskPage(
     );
     EventManager.Instance.emit(EVENTS_ENUM.TASK_DONE, task);
     return;
-  } else if (task.title === '阅读') {
+  } else if (
+    task.title === '阅读' ||
+    task.title === '文档' ||
+    pageTitle === '文档'
+  ) {
     await safeCallFunc(
       async () => await execReadTask(page, task),
       {
