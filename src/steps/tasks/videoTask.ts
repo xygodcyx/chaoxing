@@ -28,7 +28,7 @@ export async function execVideoTask(
   const locator = page.locator('.ans-job-icon'); // 或者类名定位
   const label = await locator.getAttribute('aria-label');
 
-  if (label === '任务点已完成') {
+  if (label === '任务点已完成' || task.title === '作业') {
     page.off('console', onConsoleText);
     EventManager.Instance.emit(
       EVENTS_ENUM.VIDEO_DONE,
