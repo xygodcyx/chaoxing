@@ -70,7 +70,6 @@ export default class Action {
     const {
       info: { phone },
     } = this.user
-
     const authPath = path.resolve(
       `${CHAOXING_DIR_URL}`,
       phone,
@@ -84,11 +83,9 @@ export default class Action {
       return
     }
 
-    chromium.use(stealth())
-
-    this.browser = await chromium.launch(
-      ConfigManager.Instance.launchOption,
-    )
+    this.browser = await chromium.launch({
+      ...ConfigManager.Instance.launchOption,
+    })
 
     const context = await this.browser.newContext({
       storageState: authPath,
