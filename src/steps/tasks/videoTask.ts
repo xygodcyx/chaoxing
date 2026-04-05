@@ -22,21 +22,39 @@ export async function execVideoTask(
   LoggerManager.Instance.success(
     `当前为 ${task.title} 的视频页面, 开始执行任务`,
   )
+
   const frameLoc = page.frameLocator('iframe')
   const videoLoc = frameLoc.locator('video')
 
-  const locator = page.locator('.ans-job-icon') // 或者类名定位
-  const label = await locator.getAttribute('aria-label')
+  const frameCount = await page.locator('iframe').count()
 
-  const noContentTextCount = await frameLoc
+  const noContentTextCount = await page
     .getByText('暂无内容')
     .count()
 
   if (
+    !frameCount ||
     noContentTextCount > 0 ||
-    label === '任务点已完成' ||
     task.title === '作业'
   ) {
+    page.off('console', onConsoleText)
+    EventManager.Instance.emit(
+      EVENTS_ENUM.VIDEO_DONE,
+      page,
+      task,
+      searchObj,
+    )
+    return
+  }
+  const job_status = page.locator('.ans-job-icon')
+
+  const job_status_count = await page
+    .locator('.ans-job-icon')
+    .count() // 或者类名定位
+
+  const status = await job_status.getAttribute('aria-label')
+
+  if (job_status_count > 0 && status === '任务点已完成') {
     page.off('console', onConsoleText)
     EventManager.Instance.emit(
       EVENTS_ENUM.VIDEO_DONE,
