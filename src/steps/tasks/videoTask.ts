@@ -19,6 +19,9 @@ export async function execVideoTask(
   task: TaskItem,
   searchObj: URLSearchParams,
 ) {
+  if (true) {
+    throw new Error('test error')
+  }
   LoggerManager.Instance.success(
     `当前为 ${task.title} 的视频页面, 开始执行任务`,
   )

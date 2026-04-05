@@ -1,37 +1,37 @@
-import type { Page } from 'playwright';
-import { DataManager } from '../runtime/DataManager';
-import type { TaskItem } from '../types/index';
-import { BASE_TASK_URL } from '../consts/index';
-import EventManager from '../runtime/EventManager';
-import { EVENTS_ENUM } from '../enum/index';
-import { LoggerManager } from '../runtime/LoggerManager';
-import { execVideoTask } from './tasks/videoTask';
-import { execReadTask } from './tasks/readTask';
-import { safeCallFunc } from '../utils';
+import type { Page } from 'playwright'
+import { DataManager } from '../runtime/DataManager'
+import type { TaskItem } from '../types/index'
+import { BASE_TASK_URL } from '../consts/index'
+import EventManager from '../runtime/EventManager'
+import { EVENTS_ENUM } from '../enum/index'
+import { LoggerManager } from '../runtime/LoggerManager'
+import { execVideoTask } from './tasks/videoTask'
+import { execReadTask } from './tasks/readTask'
+import { safeCallFunc } from '../utils'
 
 export async function enterTaskPage(
   page: Page,
   task: TaskItem,
 ) {
-  DataManager.Instance.globalTaskLink = task.link;
+  DataManager.Instance.globalTaskLink = task.link
 
   if (true && task.isFinish) {
     LoggerManager.Instance.info(
       `${task.title} 已完成, 跳过`,
-    );
-    EventManager.Instance.emit(EVENTS_ENUM.TASK_DONE, task);
-    return;
+    )
+    EventManager.Instance.emit(EVENTS_ENUM.TASK_DONE, task)
+    return
   }
 
   LoggerManager.Instance.start(
     `进入特定章节: ${task.title} 开始刷课...`,
-  );
+  )
 
-  await page.goto(task.link);
-  await page.waitForLoadState('domcontentloaded');
+  await page.goto(task.link)
+  await page.waitForLoadState('domcontentloaded')
 
-  const searchObj = new URLSearchParams(task.searchParams);
-  let pageTitle = await page.title();
+  const searchObj = new URLSearchParams(task.searchParams)
+  let pageTitle = await page.title()
 
   /**
    * 首次进入第一个页面的几种情况
@@ -42,21 +42,21 @@ export async function enterTaskPage(
   if (pageTitle === '学习目标') {
     LoggerManager.Instance.info(
       '当前页面为学习目标页, 直接跳过',
-    );
-    searchObj.set('num', '1');
+    )
+    searchObj.set('num', '1')
     await page.goto(
       `${BASE_TASK_URL}?${searchObj.toString()}`,
-    );
-    await page.waitForLoadState('domcontentloaded');
+    )
+    await page.waitForLoadState('domcontentloaded')
   } else if (
     pageTitle === '问卷调查' ||
     task.title === '问卷调查'
   ) {
     LoggerManager.Instance.info(
       '当前页面为问卷调查, 似乎已经到了最后一个任务点, 任务结束',
-    );
-    EventManager.Instance.emit(EVENTS_ENUM.TASK_DONE, task);
-    return;
+    )
+    EventManager.Instance.emit(EVENTS_ENUM.TASK_DONE, task)
+    return
   } else if (
     task.title === '阅读' ||
     task.title === '文档' ||
@@ -67,11 +67,11 @@ export async function enterTaskPage(
       {
         message: '执行 阅读任务 时失败',
       },
-    );
-    return;
+    )
+    return
   }
 
-  pageTitle = await page.title();
+  pageTitle = await page.title()
 
   // 如果第一个任务点是学习目标页, 那么就会自动跳过从而进入到这里, 如果第一个就是视频页, 那也会进入到这里
   if (
@@ -83,16 +83,18 @@ export async function enterTaskPage(
       async () =>
         await execVideoTask(page, task, searchObj),
       {
-        message: '执行 视频任务 时失败',
+        message: `执行 ${task.title} 时失败`,
+        isTask: true,
+        silent: true,
       },
-    );
+    )
   } else {
-    const pageTitle = await page.title();
-    const pageUrl = page.url();
+    const pageTitle = await page.title()
+    const pageUrl = page.url()
     LoggerManager.Instance.warn(
       `未知页面: ${pageTitle} , 跳过该任务请手动前往页面进行debug: ${pageUrl}`,
-    );
-    EventManager.Instance.emit(EVENTS_ENUM.TASK_DONE, task);
-    return;
+    )
+    EventManager.Instance.emit(EVENTS_ENUM.TASK_DONE, task)
+    return
   }
 }
