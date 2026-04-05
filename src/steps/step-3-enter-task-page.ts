@@ -83,7 +83,7 @@ export async function enterTaskPage(
       async () =>
         await execVideoTask(page, task, searchObj),
       {
-        message: `执行 ${task.title} 时失败`,
+        message: `执行 ${task.title} 时失败, 页面地址: ${page.url()}`,
         isTask: true,
         silent: true,
       },
