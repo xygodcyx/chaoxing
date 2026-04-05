@@ -42,15 +42,16 @@ async function usePasswordLogin(page: Page, phone: string) {
       page
         .waitForSelector('.err-tip', {
           state: 'visible',
-          timeout: 3000,
+          timeout: 10000,
         })
-        .then(() => 'error'),
+        .then(() => 'error')
+        .catch(() => null),
 
       // 情况 B：监听到跳转成功
       page
         .waitForURL(
           /^https:\/\/i\.mooc\.chaoxing\.com\/space\/index\?.*$/,
-          { timeout: 15000 },
+          { timeout: 60000 },
         )
         .then(() => 'success'),
     ]).then(async (result) => {
@@ -61,20 +62,31 @@ async function usePasswordLogin(page: Page, phone: string) {
         LoggerManager.Instance.error(
           `登录失败, 请检查原因: ${errTip?.trim()}`,
         )
-        process.exit(0)
+        throw new Error(
+          `登录失败, 请检查原因: ${errTip?.trim()}`,
+        )
       }
 
-      // End of authentication steps.
-      LoggerManager.Instance.start(
-        '登录成功, 正在保存会话状态...',
+      if (result === 'success') {
+        // End of authentication steps.
+        LoggerManager.Instance.start(
+          '登录成功, 正在保存会话状态...',
+        )
+        return // 正常结束
+      }
+
+      await page.waitForURL(
+        (url) => url.href.includes('i.mooc.chaoxing.com'),
+        { timeout: 60000 },
       )
+      LoggerManager.Instance.start('登录成功...')
     })
-  } catch (e) {
+  } catch (e: any) {
     // 处理超时或其他意外情况
     LoggerManager.Instance.error(
-      '登录响应超时, 请检查网络或验证码状态',
+      `登录响应超时, 请检查网络或验证码状态 ${e.message}`,
     )
-    process.exit(1)
+    throw new Error(e)
   }
 }
 
