@@ -28,6 +28,21 @@ export async function execVideoTask(
 
   const frameCount = await page.locator('iframe').count()
 
+  const videoCount = await videoLoc.count()
+
+  if (!videoCount) {
+    LoggerManager.Instance.warn(
+      `莫名其妙的任务进到视频任务里了，跳过！跳过！全部跳过！只刷视频，只刷视频，只刷视频`,
+    )
+    page.off('console', onConsoleText)
+    EventManager.Instance.emit(
+      EVENTS_ENUM.VIDEO_DONE,
+      page,
+      task,
+      searchObj,
+    )
+    return
+  }
   const noContentTextCount = await page
     .getByText('暂无内容')
     .count()
