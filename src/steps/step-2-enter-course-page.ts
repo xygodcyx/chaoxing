@@ -51,6 +51,7 @@ export async function enterCoursePage(
   queryParams.set('pageHeader', '1')
 
   const url = `${src.split('?')[0]}?${queryParams.toString()}`
+  LoggerManager.Instance.info(`正在进入网页: ${url}`)
   await page.goto(url)
   await page.waitForLoadState('domcontentloaded')
 
