@@ -238,7 +238,7 @@ export async function execVideoTask(
         searchObj,
       )
     }
-  }, 300)
+  }, 2000)
 
   let findTopicId = setInterval(checkHasQuestion, 1000)
   async function checkHasQuestion() {
