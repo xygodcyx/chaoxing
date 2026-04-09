@@ -17,7 +17,6 @@ export async function enterCoursePage(
   )
 
   await page.goto(course.link)
-
   await page.waitForLoadState('domcontentloaded')
 
   // clazzid=138708887&courseid=260244521&knowledgeid=705052636&num=0&ut=s&cpi=514792978&v=2025-0424-1038-4&mooc2=1&isMicroCourse=false&editorPreview=0&crossId"
@@ -61,7 +60,6 @@ export async function enterCoursePage(
     .locator('.chapter_item')
     .all()
 
-  await waitAlways()
   const tasks: Array<TaskItem> = []
 
   for (const chapterItem of allChapterItems) {
@@ -113,6 +111,10 @@ export async function enterCoursePage(
       knowledgeid,
       index: -1,
     }
+
+    LoggerManager.Instance.debug(
+      `获取 ${task.title} 任务数据成功`,
+    )
 
     tasks.push(task)
   }

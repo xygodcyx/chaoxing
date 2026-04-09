@@ -10,6 +10,7 @@ import type { Page } from 'playwright'
 import type { CourseItem } from '../types/index'
 import { LoggerManager } from '../runtime/LoggerManager'
 import { DataManager } from '../runtime/DataManager'
+import { getHiddenInputValue } from '../utils'
 
 export async function enterPersonCenter(page: Page) {
   LoggerManager.Instance.start(
@@ -61,6 +62,7 @@ export async function enterPersonCenter(page: Page) {
   const coursesLoc = await page.locator('.course').all()
 
   const courses: Array<CourseItem> = []
+  // courseid=260244521&clazzid=138708887&cpi=514792978&enc=9f6b93a268265646e8e5444dc3a8e7d0&t=1775707123523&pageHeader=1&v=2&hideHead=0
   let index = 0
   for (const courseLoc of coursesLoc) {
     const title =
@@ -73,34 +75,14 @@ export async function enterPersonCenter(page: Page) {
         .locator('.color1')
         .getAttribute('href')) || ''
 
-    const baseUrlLink = link.split('?')[0]
-    const linkParams = new URLSearchParams(
-      link.split('?')[1],
-    )
-
-    linkParams.set('hideHead', '1')
-    linkParams.set('v', '2')
-    const fullLink = `${baseUrlLink}?${linkParams.toString()}`
-    const barCount = await courseLoc
-      .locator('.bar-tip')
-      .count()
-
-    let bar = '0%'
-
-    if (barCount > 0) {
-      bar =
-        (
-          await courseLoc.locator('.bar-tip').textContent()
-        )?.trim() || '0%'
-      LoggerManager.Instance.info(
-        ` ${title} 课程完成进度: ${bar} `,
-      )
-    }
+    // const barCount = await courseLoc
+    //   .locator('.bar-tip')
+    //   .count()
 
     const course: CourseItem = {
       title,
-      link: fullLink,
-      isFinish: +bar.slice(0, -1) === 100,
+      link,
+      isFinish: false,
       index,
     }
 
