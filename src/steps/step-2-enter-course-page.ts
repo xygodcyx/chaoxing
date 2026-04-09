@@ -19,6 +19,8 @@ export async function enterCoursePage(
   await page.goto(course.link)
   await page.waitForLoadState('domcontentloaded')
 
+  await page.waitForLoadState('networkidle')
+
   // clazzid=138708887&courseid=260244521&knowledgeid=705052636&num=0&ut=s&cpi=514792978&v=2025-0424-1038-4&mooc2=1&isMicroCourse=false&editorPreview=0&crossId"
   const curCourseContext: Record<string, string> = {}
   curCourseContext.courseid = await getHiddenInputValue(
@@ -43,6 +45,15 @@ export async function enterCoursePage(
   curCourseContext.isMicroCourse = 'false'
   curCourseContext.editorPreview = '0'
   curCourseContext.crossId = ''
+
+  const src = page.url()
+  const queryParams = new URLSearchParams(src.split('?')[1])
+  queryParams.set('pageHeader', '1')
+
+  const url = `${src.split('?')[0]}?${queryParams.toString()}`
+  console.log(url)
+  await page.goto(url)
+  await page.waitForLoadState('domcontentloaded')
 
   const targetCourseUrl =
     (await page.locator('iframe').getAttribute('src')) || ''
