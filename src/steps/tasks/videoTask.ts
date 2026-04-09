@@ -28,9 +28,11 @@ export async function execVideoTask(
 
   const frameCount = await page.locator('iframe').count()
 
-  const videoCount = await videoLoc.count()
+  const readerCount = await frameLoc
+    .locator('#reader')
+    .count()
 
-  if (!videoCount) {
+  if (readerCount === 0) {
     LoggerManager.Instance.warn(
       `莫名其妙的任务进到视频任务里了，跳过！跳过！全部跳过！只刷视频，只刷视频，只刷视频`,
     )
@@ -43,6 +45,7 @@ export async function execVideoTask(
     )
     return
   }
+
   const noContentTextCount = await page
     .getByText('暂无内容')
     .count()
@@ -65,7 +68,7 @@ export async function execVideoTask(
 
   const job_status_count = await page
     .locator('.ans-job-icon')
-    .count() // 或者类名定位
+    .count()
 
   const status = await job_status.getAttribute('aria-label')
 
@@ -143,6 +146,7 @@ export async function execVideoTask(
     .forceStart
     ? DURATION
     : 0.1
+
   await frameLoc.locator('video').evaluate(
     async (video: HTMLVideoElement, params) => {
       video.currentTime =

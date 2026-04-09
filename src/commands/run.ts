@@ -1,23 +1,23 @@
-import * as p from '@clack/prompts';
+import * as p from '@clack/prompts'
 
-import dotenv from 'dotenv';
-import os from 'os';
-import path from 'path';
+import dotenv from 'dotenv'
+import os from 'os'
+import path from 'path'
 
-import Action from '../action/Action';
-import { CACHE_KEY_ENUM } from '../enum/index';
-import { CacheManager } from '../runtime/CacheManager';
-import { ConfigManager } from '../runtime/ConfigManager';
-import { DataManager } from '../runtime/DataManager';
-import { LoggerManager } from '../runtime/LoggerManager';
+import Action from '../action/Action'
+import { CACHE_KEY_ENUM } from '../enum/index'
+import { CacheManager } from '../runtime/CacheManager'
+import { ConfigManager } from '../runtime/ConfigManager'
+import { DataManager } from '../runtime/DataManager'
+import { LoggerManager } from '../runtime/LoggerManager'
 import type {
   CommandRun,
   CommandUserInfo,
   UserStatus,
-} from '../types/index';
+} from '../types/index'
 
-import { registerCommand } from './index';
-import { getStorageDirName, maskPhone } from '../utils';
+import { registerCommand } from './index'
+import { getStorageDirName, maskPhone } from '../utils'
 
 export async function initUserStatus(
   commandUser: CommandUserInfo = {
@@ -25,11 +25,11 @@ export async function initUserStatus(
   },
 ) {
   if (!commandUser.phone) {
-    LoggerManager.Instance.error(`手机号缺失`);
-    throw new Error('手机号缺失');
+    LoggerManager.Instance.error(`手机号缺失`)
+    throw new Error('手机号缺失')
   }
 
-  await CacheManager.Instance.init(commandUser.phone);
+  await CacheManager.Instance.init(commandUser.phone)
 
   const cacheUser = CacheManager.Instance.load<UserStatus>(
     `${CACHE_KEY_ENUM.USER_STATUS}`,
@@ -38,11 +38,11 @@ export async function initUserStatus(
         phone: '',
       },
     },
-  );
+  )
 
   if (!commandUser.phone && !cacheUser.info.phone) {
-    LoggerManager.Instance.error(`手机号缺失`);
-    throw new Error('手机号缺失');
+    LoggerManager.Instance.error(`手机号缺失`)
+    throw new Error('手机号缺失')
   }
 
   DataManager.Instance.userStatus = {
@@ -59,12 +59,12 @@ export async function initUserStatus(
       cacheUser.curTaskName ||
       process.env.TASK ||
       '',
-  };
+  }
 
   await CacheManager.Instance.save(
     `${CACHE_KEY_ENUM.USER_STATUS}`,
     DataManager.Instance.userStatus,
-  );
+  )
 }
 
 export function registerRunCommand() {
@@ -107,9 +107,9 @@ export function registerRunCommand() {
         description: '强制从视频开头开始重新刷',
       },
     ],
-    async str => {
-      let phone = str.phone;
-      DataManager.Instance.onlyVideoMode = str.onlyVideo;
+    async (str) => {
+      let phone = str.phone
+      DataManager.Instance.onlyVideoMode = str.onlyVideo
       if (!phone) {
         phone = (await p.password({
           message: '请输入手机号',
@@ -117,63 +117,62 @@ export function registerRunCommand() {
           // type: 'password'
           validate(value) {
             if (!value || value.length !== 11)
-              return '手机号格式不正确';
+              return '手机号格式不正确'
           },
-        })) as string;
+        })) as string
 
         if (!phone) {
-          LoggerManager.Instance.error('请提供手机号');
-          return;
+          LoggerManager.Instance.error('请提供手机号')
+          return
         }
       }
 
       try {
         const envPath = path.resolve(
-          process.env.NODE_ENV === 'production' ?
-            os.homedir()
-          : '',
+          process.env.NODE_ENV === 'production'
+            ? os.homedir()
+            : '',
           '.chaoxing',
           getStorageDirName(phone),
           '.env',
-        );
+        )
 
         dotenv.config({
           path: envPath,
           override: true,
           quiet: true,
-        });
+        })
 
-        const course = str.course;
-        const task = str.task;
-        const show = str.show;
+        const course = str.course
+        const task = str.task
+        const show = str.show
 
-        ConfigManager.Instance.launchOption.headless =
-          !show;
+        ConfigManager.Instance.launchOption.headless = !show
 
         ConfigManager.Instance.launchOption.forceStart =
-          str.force;
+          str.force
 
         await initUserStatus({
           phone: getStorageDirName(phone),
           course,
           task,
-        });
+        })
 
         LoggerManager.Instance.success(
           `${maskPhone(phone)} 用户初始化成功, 开始执行相应的任务`,
-        );
+        )
 
         const action = new Action(
           DataManager.Instance.userStatus,
-        );
+        )
 
-        await action.init();
+        await action.init()
       } catch (error: any) {
         LoggerManager.Instance.error(
           `任务初始化出错：${error.message}`,
           error,
-        );
+        )
       }
     },
-  );
+  )
 }

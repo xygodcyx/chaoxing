@@ -28,6 +28,7 @@ export async function enterTaskPage(
   )
 
   await page.goto(task.link)
+
   await page.waitForLoadState('domcontentloaded')
 
   const searchObj = new URLSearchParams(task.searchParams)
