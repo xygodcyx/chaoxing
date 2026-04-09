@@ -51,7 +51,6 @@ export async function enterCoursePage(
   queryParams.set('pageHeader', '1')
 
   const url = `${src.split('?')[0]}?${queryParams.toString()}`
-  console.log(url)
   await page.goto(url)
   await page.waitForLoadState('domcontentloaded')
 
