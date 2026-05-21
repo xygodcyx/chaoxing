@@ -5,6 +5,8 @@
   "description": "自动刷超星网课",
   "main": "dist/index.js",
   "scripts": {
+    "publish:patch": "pnpm build && npm version patch && npm publish",
+    "publish:minor": "pnpm build && npm version minor && npm publish",
     "serve": "python server/app.py",
     "install": "npx playwright install",
     "dev": "cross-env NODE_ENV=development tsx src/index.ts",
