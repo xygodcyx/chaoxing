@@ -193,7 +193,7 @@ export async function execChapterTestTask(
       allChoiceLocs[
       saveArrayIndex(answerIndex, allChoiceLocs.length)
       ]
-    await choiceLoc.click()
+    await choiceLoc.evaluate((el: HTMLElement) => el.click())
   }
 
 
@@ -203,14 +203,7 @@ export async function execChapterTestTask(
 
   await waitForRandomTime(2000)
 
-  await page.evaluate((targetScroll) => {
-    window.scrollTo({
-      top: targetScroll,
-      behavior: 'smooth'  // 每步也使用平滑滚动
-    });
-  }, 0);
-
-  await popok.click({ timeout: 10000 });
+  await popok.evaluate((el: HTMLElement) => el.click())
 
   const achievement = await finalQuizFrame
     .locator('.achievement i')
