@@ -11,14 +11,10 @@ import {
 import {
   cleanString,
   saveArrayIndex,
-  smoothScrollToTop,
   waitAlways,
   waitForRandomTime,
 } from '../../utils'
-import {
-  decodeFont,
-  decodeFontInProd,
-} from '../../utils/fontDecoder'
+import { decodeFont } from '../../utils/fontDecoder'
 import { fetchAnswersFromAI } from '../../utils/ai'
 import { DataManager } from '../../runtime/DataManager'
 
@@ -30,8 +26,6 @@ export async function execChapterTestTask(
   LoggerManager.Instance.start(
     `当前为 ${task.title} 的章节测验页面, 开始执行任务...`,
   )
-
-  console.log(DataManager.Instance.onlyVideoMode)
 
   if (DataManager.Instance.onlyVideoMode) {
     LoggerManager.Instance.info('跳过答题')
@@ -132,12 +126,7 @@ export async function execChapterTestTask(
         )?.trim() || ''
       const cleanedTitle = cleanString(subjectTitle)
 
-      let decodeTitle = cleanedTitle
-
-      decodeTitle =
-        process.env.NODE_ENV === 'production'
-          ? await decodeFontInProd(cleanedTitle)
-          : await decodeFont(fontBase64, cleanedTitle)
+      const decodeTitle = await decodeFont(fontBase64, cleanedTitle)
 
       const choiceLocs = await subjectLoc
         .locator(
@@ -154,13 +143,10 @@ export async function execChapterTestTask(
         const cleanChoiceContent = cleanString(
           choiceContent || '',
         )
-        const decodeChoiceContent =
-          process.env.NODE_ENV === 'production'
-            ? await decodeFontInProd(cleanChoiceContent)
-            : await decodeFont(
-              fontBase64,
-              cleanChoiceContent,
-            )
+        const decodeChoiceContent = await decodeFont(
+          fontBase64,
+          cleanChoiceContent,
+        )
         const choiceItem = {
           index: choiceIndex,
           content: decodeChoiceContent,

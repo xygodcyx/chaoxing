@@ -26,7 +26,7 @@ export async function fetchAnswersFromAI(
             content: `这是你要回答的问题：${JSON.stringify(quizData)}`,
           },
         ],
-        model: 'deepseek-chat',
+        model: 'deepseek-v4-flash',
       },
     );
 
