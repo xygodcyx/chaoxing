@@ -24,7 +24,7 @@ export async function execChapterTestTask(
 ) {
   // TODO 完成章节测验的自动答题功能
   LoggerManager.Instance.start(
-    `当前为 ${task.title} 的章节测验页面, 开始执行任务...`,
+    `当前为 ${task.title} 的章节测验页面, 开始执行任务...题目网页: ${page.url()}`,
   )
 
   if (DataManager.Instance.onlyVideoMode) {
@@ -35,7 +35,7 @@ export async function execChapterTestTask(
 
   if (!process.env.DEEPSEEK_API_KEY) {
     LoggerManager.Instance.warn(
-      `没有 DEEPSEEK_API_KEY , 无法执行自动答任务, 请前往deepseek官网生成DEEPSEEK_API_KEY: https://platform.deepseek.com/DEEPSEEK_API_KEYs`,
+      `没有 DEEPSEEK_API_KEY, 无法执行自动答任务, 请前往deepseek官网生成DEEPSEEK_API_KEY: https://platform.deepseek.com/DEEPSEEK_API_KEYs`,
     )
     LoggerManager.Instance.warn(
       '请运行 "chaoxing where" 命令前往配置目录编辑.env文件并添加DEEPSEEK_API_KEY字段, eg: DEEPSEEK_API_KEY=sk-xxxxxxxxxxxx',
@@ -167,11 +167,11 @@ export async function execChapterTestTask(
     `${task.title} 的题目列表:\r\n ${JSON.stringify(subjectList)}`,
   )
 
-  LoggerManager.Instance.debug(
+  LoggerManager.Instance.info(
     `${task.title} 的题目数量：${subjectList.length}`,
   )
 
-  LoggerManager.Instance.debug(
+  LoggerManager.Instance.info(
     `${task.title} 题目的所有选项数量：${allChoiceLocs.length}`,
   )
 
@@ -180,12 +180,12 @@ export async function execChapterTestTask(
     const answer = await fetchAnswersFromAI(subject)
     aiAnswers.push(...answer)
     await LoggerManager.Instance.info(
-      `AI为题目: ${subject.title} 返回了答案: ${answer} , 题目网页:${page.url()}`,
+      `AI为题目: ${subject.title} 返回了答案: ${answer}`,
     )
   }
 
   LoggerManager.Instance.info(
-    `AI 返回了答案: ${JSON.stringify(aiAnswers)} , 题目网页:${page.url()}`,
+    `AI 返回了答案: ${JSON.stringify(aiAnswers)}`,
   )
 
   for (const answerIndex of aiAnswers.flat()) {
@@ -199,7 +199,8 @@ export async function execChapterTestTask(
 
   const popok = finalQuizFrame.locator('#popok')
 
-  await btnSubmit.click()
+  await btnSubmit.evaluate((el: HTMLElement) => el.click())
+
 
   await waitForRandomTime(2000)
 
