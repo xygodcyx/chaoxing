@@ -120,7 +120,7 @@ export function randomInt(start: number, end: number) {
 }
 
 export async function waitAlways() {
-  return new Promise(() => {})
+  return new Promise(() => { })
 }
 
 export async function waitForTime(time: number) {
@@ -153,6 +153,7 @@ export async function getHiddenInputValue(
     .inputValue()
   return value
 }
+
 
 export async function isFileExist(filePath: string) {
   try {
@@ -297,3 +298,4 @@ export async function getLoggedChromePage(phone: string) {
 
   return { browser, page }
 }
+

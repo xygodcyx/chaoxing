@@ -220,14 +220,12 @@ export default class Action {
     )
     await page.waitForLoadState('domcontentloaded')
     const pageTitle = await page.title()
-    if (pageTitle === '章节测验') {
-      await safeCallFunc(
-        async () => await execChapterTestTask(page, task),
-        {
-          message: '执行 章节测验 时失败',
-        },
-      )
-    }
+    await safeCallFunc(
+      async () => await execChapterTestTask(page, task),
+      {
+        message: '执行 章节测验 时失败',
+      },
+    )
   }
 
   onTaskDone(task: TaskItem) {

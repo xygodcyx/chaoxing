@@ -1,4 +1,4 @@
-import { Page } from 'playwright'
+import { Locator, Page } from 'playwright'
 import { EVENTS_ENUM } from '../../enum'
 import EventManager from '../../runtime/EventManager'
 import { LoggerManager } from '../../runtime/LoggerManager'
@@ -11,6 +11,7 @@ import {
 import {
   cleanString,
   saveArrayIndex,
+  smoothScrollToTop,
   waitAlways,
   waitForRandomTime,
 } from '../../utils'
@@ -157,9 +158,9 @@ export async function execChapterTestTask(
           process.env.NODE_ENV === 'production'
             ? await decodeFontInProd(cleanChoiceContent)
             : await decodeFont(
-                fontBase64,
-                cleanChoiceContent,
-              )
+              fontBase64,
+              cleanChoiceContent,
+            )
         const choiceItem = {
           index: choiceIndex,
           content: decodeChoiceContent,
@@ -204,14 +205,27 @@ export async function execChapterTestTask(
   for (const answerIndex of aiAnswers.flat()) {
     const choiceLoc =
       allChoiceLocs[
-        saveArrayIndex(answerIndex, allChoiceLocs.length)
+      saveArrayIndex(answerIndex, allChoiceLocs.length)
       ]
     await choiceLoc.click()
   }
+
+
   const popok = finalQuizFrame.locator('#popok')
+
   await btnSubmit.click()
+
   await waitForRandomTime(2000)
-  await popok.click()
+
+  await page.evaluate((targetScroll) => {
+    window.scrollTo({
+      top: targetScroll,
+      behavior: 'smooth'  // 每步也使用平滑滚动
+    });
+  }, 0);
+
+  await popok.click({ timeout: 10000 });
+
   const achievement = await finalQuizFrame
     .locator('.achievement i')
     .textContent()
