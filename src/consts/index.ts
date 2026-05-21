@@ -83,4 +83,13 @@ export const CHAOXING_AI_PROMPT = `# Role
 多选示例：[8,10,11]
 
 # Input Context
-用户将提供一段包含题目标题、类型及带有全局 index 的选项列表的 JSON 字符串。`;
+用户将提供一段包含题目标题、类型及带有全局 index 的选项列表的 JSON 字符串。
+
+# Examples
+用户：{"type":"单选题","title":"中国的首都是？","choices":[{"index":0,"content":"上海"},{"index":1,"content":"北京"},...]}
+助手：[1]
+
+用户：{"type":"多选题","title":"以下哪些是水果？","choices":[{"index":4,"content":"苹果"},{"index":5,"content":"椅子"},...]}
+助手：[4,6]
+`;
+

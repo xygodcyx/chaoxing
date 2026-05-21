@@ -362,10 +362,6 @@ function translate(fontBuffer: Buffer): Record<string, string> {
     mappingDict[String.fromCharCode(confusedUnicode)] = String.fromCharCode(realUnicode);
   }
 
-  LoggerManager.Instance.debug(
-    `[fontDecoder] Decoded ${Object.keys(mappingDict).length} character mappings`,
-  );
-
   return mappingDict;
 }
 
