@@ -11,7 +11,6 @@ import {
 import {
   cleanString,
   saveArrayIndex,
-  waitAlways,
   waitForRandomTime,
 } from '../../utils'
 import { decodeFont } from '../../utils/fontDecoder'
@@ -77,14 +76,12 @@ export async function execChapterTestTask(
     .all()
 
   const allChoiceLocs = await wrapLoc
-    .locator('[class*="before-after"]')
+    .locator('.singleQuesId ul.Zy_ulTop.qtDetail li.clearfix')
     .all()
 
   const subjectList: Array<SubjectItem> = []
 
-  const subjectLengthRegex = /\s*(\d+)\s*/
-  const subjectTypeRegex =
-    /(单选题|多选题|填空题|判断题|简答题)/
+  const subjectLengthRegex = /(\d+)/
 
   let subjectLocIndexOffset = 0
 
@@ -112,9 +109,14 @@ export async function execChapterTestTask(
     const subjectLength = +(
       typeContent?.match(subjectLengthRegex)?.[1] || '1'
     )
-    const subjectType = (typeContent?.match(
-      subjectTypeRegex,
-    )?.[1] || '') as SubjectType
+    const subjectType = ((typeContent => {
+      if (/单选|單選/.test(typeContent)) return '单选题'
+      if (/多选|多選/.test(typeContent)) return '多选题'
+      if (/判断|判斷/.test(typeContent)) return '判断题'
+      if (/填空/.test(typeContent)) return '填空题'
+      if (/简答|簡答/.test(typeContent)) return '简答题'
+      return ''
+    })(typeContent || '')) as SubjectType
     for (let index = 0; index < subjectLength; index++) {
       const subjectLoc = subjectLocs[subjectLocIndexOffset]
       subjectLocIndexOffset++
@@ -129,16 +131,12 @@ export async function execChapterTestTask(
       const decodeTitle = await decodeFont(fontBase64, cleanedTitle)
 
       const choiceLocs = await subjectLoc
-        .locator(
-          subjectType === '多选题'
-            ? '.before-after-checkbox'
-            : '.before-after',
-        )
+        .locator('ul.Zy_ulTop.qtDetail li.clearfix')
         .all()
       const choices: Array<ChoiceItem> = []
       for (const choiceLoc of choiceLocs) {
         const choiceContent = await choiceLoc
-          .locator('.after')
+          .locator('a.fl')
           .textContent()
         const cleanChoiceContent = cleanString(
           choiceContent || '',
@@ -218,7 +216,6 @@ export async function execChapterTestTask(
   LoggerManager.Instance.success(
     `答题完成, 本次成绩：${achievement} 分`,
   )
-  // await waitAlways();
   await waitForRandomTime(2000)
   LoggerManager.Instance.success(
     `${task.title} 刷完啦, 开始刷下一个`,
