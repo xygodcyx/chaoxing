@@ -169,8 +169,8 @@ export async function execVideoTask(
       },
     )
 
-  const cutDuration = ConfigManager.Instance.launchOption
-    .forceStart
+  const cutDuration = (ConfigManager.Instance.launchOption
+    .forceStart || isLivePage)
     ? DURATION
     : 0.1
 
