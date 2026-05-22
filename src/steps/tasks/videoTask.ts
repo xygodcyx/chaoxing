@@ -25,32 +25,34 @@ export async function execVideoTask(
   )
   await page.waitForLoadState("domcontentloaded")
 
+  let isLivePage = false
+
   const frameLoc = page.frameLocator('iframe')
-  const videoLoc = frameLoc.locator('video')
 
   const frameCount = await page.locator('iframe').count()
 
   const readerCount = await frameLoc
     .locator('#reader')
     .count()
-
   const liveBtnCount = await frameLoc.locator(".liveStatus").count()
   LoggerManager.Instance.debug("正在检查是否为直播页")
   if (liveBtnCount !== 0) {
-    LoggerManager.Instance.info("直播页面, 开始观看直播并进入下一个任务点")
-    await frameLoc.locator(".liveStatus").click()
-    page.off('console', onConsoleText)
-    EventManager.Instance.emit(
-      EVENTS_ENUM.VIDEO_DONE,
-      page,
-      task,
-      searchObj,
-    )
-    return
+    isLivePage = true
+    LoggerManager.Instance.info("直播页面, 开始观看直播...")
+    const liveLinkDataStr = await frameLoc.owner().getAttribute("data")
+    const liveLinkData = JSON.parse(liveLinkDataStr ?? '')
+    const usp = new URLSearchParams()
+    for (const key in liveLinkData) {
+      if (!Object.hasOwn(liveLinkData, key)) continue;
+      usp.append(key, liveLinkData[key])
+    }
+    const liveLink = "https://zhibo.chaoxing.com/" + liveLinkData.jobid.split("-")[1] + "?" + usp.toString()
+    LoggerManager.Instance.debug(liveLink)
+    await page.goto(liveLink)
+    await page.waitForLoadState("domcontentloaded")
   }
 
-
-  if (readerCount === 0) {
+  if (!isLivePage && readerCount === 0) {
     LoggerManager.Instance.warn(
       `莫名其妙的任务进到视频任务里了，跳过！跳过！全部跳过！只刷视频，只刷视频，只刷视频`,
     )
@@ -74,6 +76,7 @@ export async function execVideoTask(
     task.title === '作业'
   ) {
     page.off('console', onConsoleText)
+    LoggerManager.Instance.info("不知道是什么玩意, 直接跳过")
     EventManager.Instance.emit(
       EVENTS_ENUM.VIDEO_DONE,
       page,
@@ -82,24 +85,30 @@ export async function execVideoTask(
     )
     return
   }
-  const job_status = page.locator('.ans-job-icon')
+  if (!isLivePage) {
+    const job_status = page.locator('.ans-job-icon')
 
-  const job_status_count = await page
-    .locator('.ans-job-icon')
-    .count()
+    const job_status_count = await page
+      .locator('.ans-job-icon')
+      .count()
 
-  const status = await job_status.getAttribute('aria-label')
+    const status = await job_status.getAttribute('aria-label')
 
-  if (job_status_count > 0 && status === '任务点已完成') {
-    page.off('console', onConsoleText)
-    EventManager.Instance.emit(
-      EVENTS_ENUM.VIDEO_DONE,
-      page,
-      task,
-      searchObj,
-    )
-    return
+    if (job_status_count > 0 && status === '任务点已完成') {
+      LoggerManager.Instance.info("已经看完了, 跳过")
+      page.off('console', onConsoleText)
+      EventManager.Instance.emit(
+        EVENTS_ENUM.VIDEO_DONE,
+        page,
+        task,
+        searchObj,
+      )
+      return
+    }
   }
+
+  const videoLoc = isLivePage ? page.locator("video") : frameLoc.locator('video')
+  const pageLoc = isLivePage ? page : frameLoc
 
   const getIsPaused = async () => {
     const isPaused = await videoLoc.evaluate(
@@ -111,12 +120,12 @@ export async function execVideoTask(
   }
 
   // 视频还未加载时, 只有一个蒙层按钮被展示出来
-  const playButton = frameLoc.locator(
+  const playButton = pageLoc.locator(
     '.vjs-big-play-button',
   )
-
+  console.log(playButton)
   // 视频播放加载出来的时候左下角的播放/暂停按钮
-  const videoControlButton = frameLoc.locator(
+  const videoControlButton = pageLoc.locator(
     '.vjs-play-control',
   )
 
@@ -165,7 +174,7 @@ export async function execVideoTask(
     ? DURATION
     : 0.1
 
-  await frameLoc.locator('video').evaluate(
+  await pageLoc.locator('video').evaluate(
     async (video: HTMLVideoElement, params) => {
       video.currentTime =
         params.duration - params.cutDuration
