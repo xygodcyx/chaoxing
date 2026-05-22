@@ -23,7 +23,7 @@ export async function execVideoTask(
   LoggerManager.Instance.success(
     `当前为 ${task.title} 的视频页面, 开始执行任务`,
   )
-  await page.waitForLoadState("networkidle")
+  await page.waitForLoadState("domcontentloaded")
 
   const frameLoc = page.frameLocator('iframe')
   const videoLoc = frameLoc.locator('video')
@@ -35,6 +35,7 @@ export async function execVideoTask(
     .count()
 
   const liveBtnCount = await frameLoc.locator(".liveStatus").count()
+  LoggerManager.Instance.debug("正在检查是否为直播页")
   if (liveBtnCount !== 0) {
     LoggerManager.Instance.info("直播页面, 开始观看直播并进入下一个任务点")
     await frameLoc.locator(".liveStatus").click()
