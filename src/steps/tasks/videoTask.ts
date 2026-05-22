@@ -7,6 +7,7 @@ import EventManager from '../../runtime/EventManager'
 import { LoggerManager } from '../../runtime/LoggerManager'
 import { TaskItem } from '../../types'
 import {
+  getLoggedChromePage,
   pauseBar,
   resumeBar,
   waitAlways,
@@ -22,6 +23,7 @@ export async function execVideoTask(
   LoggerManager.Instance.success(
     `当前为 ${task.title} 的视频页面, 开始执行任务`,
   )
+  await page.waitForLoadState("networkidle")
 
   const frameLoc = page.frameLocator('iframe')
   const videoLoc = frameLoc.locator('video')
@@ -31,6 +33,21 @@ export async function execVideoTask(
   const readerCount = await frameLoc
     .locator('#reader')
     .count()
+
+  const liveBtnCount = await frameLoc.locator(".liveStatus").count()
+  if (liveBtnCount !== 0) {
+    LoggerManager.Instance.info("直播页面, 开始观看直播并进入下一个任务点")
+    await frameLoc.locator(".liveStatus").click()
+    page.off('console', onConsoleText)
+    EventManager.Instance.emit(
+      EVENTS_ENUM.VIDEO_DONE,
+      page,
+      task,
+      searchObj,
+    )
+    return
+  }
+
 
   if (readerCount === 0) {
     LoggerManager.Instance.warn(

@@ -13,5 +13,10 @@ export class ConfigManager extends Singleton {
     return super.GetInstance<ConfigManager>();
   }
 
-  public launchOption: Options = { ...config };
+  public launchOption: Options = {
+    ...config, args: [
+      '--mute-audio',  // Chrome 启动参数，静音整个浏览器
+      '--autoplay-policy=no-user-gesture-required'
+    ]
+  };
 }

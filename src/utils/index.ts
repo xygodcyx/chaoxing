@@ -279,9 +279,13 @@ export function cleanString(rawTitle: string): string {
 }
 
 export async function getLoggedChromePage(phone: string) {
-  const browser = await chromium.launch(
+
+  const browser = DataManager.Instance.curBrowser ?? await chromium.launch(
     ConfigManager.Instance.launchOption,
+
   )
+
+  DataManager.Instance.curBrowser = browser
 
   const authPath = path.resolve(
     `${CHAOXING_DIR_URL}`,
@@ -292,7 +296,35 @@ export async function getLoggedChromePage(phone: string) {
 
   const context = await browser.newContext({
     storageState: authPath,
+
   })
+
+  context.on('page', async (newPage) => {
+    console.log('新页面打开，正在静音...');
+
+    // 等待新页面加载
+    await newPage.waitForLoadState('networkidle');
+
+    // 静音新页面
+    await newPage.evaluate(() => {
+      // 静音所有媒体元素
+      const muteMedia = () => {
+        document.querySelectorAll('video').forEach((el) => {
+          (el as HTMLVideoElement).muted = true;
+          (el as HTMLVideoElement).volume = 0;
+        });
+      };
+
+      muteMedia();
+
+      // 监听动态添加的媒体元素
+      const observer = new MutationObserver(muteMedia);
+      observer.observe(document.body, { childList: true, subtree: true });
+    });
+
+    console.log('新页面已静音');
+  });
+
 
   const page = await context.newPage()
 

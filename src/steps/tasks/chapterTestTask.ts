@@ -54,6 +54,15 @@ export async function execChapterTestTask(
 
   const wrapLoc = finalQuizFrame.locator('#ZyBottom')
 
+  const wrapCount = await wrapLoc.count()
+  if (wrapCount === 0) {
+    LoggerManager.Instance.warn(
+      '当前页面不是测试页, 跳过',
+    )
+    EventManager.Instance.emit(EVENTS_ENUM.TASK_DONE, task)
+    return
+  }
+
   const status = await finalQuizFrame
     .locator('.testTit_status')
     .textContent()

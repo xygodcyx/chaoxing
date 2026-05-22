@@ -20,6 +20,8 @@ export class DataManager extends Singleton {
     curTaskName: '',
   }
 
+  public curBrowser: Browser | null = null
+
   public lastQrCodeImagePath = ''
 
   public password: string = ''
