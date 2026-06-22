@@ -91,6 +91,12 @@ export function registerRunCommand() {
         description: '要刷的章节, 留空从第一个开始刷',
       },
       {
+        short: 'i',
+        long: 'courseBtnIndex',
+        type: 'string',
+        description: '课程章节按钮在nav栏里的位置，从1开始，帮助工具进入正确的章节页面提取任务信息，默认为2',
+      },
+      {
         short: 's',
         long: 'show',
         description:
@@ -110,6 +116,7 @@ export function registerRunCommand() {
     async (str) => {
       let phone = str.phone
       DataManager.Instance.onlyVideoMode = str.onlyVideo
+      DataManager.Instance.courseIndex = str.courseBtnIndex ? parseInt(str.courseBtnIndex) : 2
       if (!phone) {
         phone = (await p.password({
           message: '请输入手机号',
@@ -149,8 +156,7 @@ export function registerRunCommand() {
 
         ConfigManager.Instance.launchOption.headless = !show
 
-        ConfigManager.Instance.launchOption.forceStart =
-          str.force
+        ConfigManager.Instance.launchOption.forceStart = str.force
 
         await initUserStatus({
           phone: getStorageDirName(phone),

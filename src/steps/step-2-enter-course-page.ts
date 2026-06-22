@@ -20,7 +20,6 @@ export async function enterCoursePage(
   await page.waitForLoadState('domcontentloaded')
 
   await page.waitForLoadState('networkidle')
-
   // clazzid=138708887&courseid=260244521&knowledgeid=705052636&num=0&ut=s&cpi=514792978&v=2025-0424-1038-4&mooc2=1&isMicroCourse=false&editorPreview=0&crossId"
   const curCourseContext: Record<string, string> = {}
   curCourseContext.courseid = await getHiddenInputValue(
@@ -48,7 +47,7 @@ export async function enterCoursePage(
 
   const src = page.url()
   const queryParams = new URLSearchParams(src.split('?')[1])
-  queryParams.set('pageHeader', '1')
+  queryParams.set('pageHeader', (DataManager.Instance.courseIndex - 1).toString())
 
   const url = `${src.split('?')[0]}?${queryParams.toString()}`
   LoggerManager.Instance.info(`正在进入网页: ${url}`)

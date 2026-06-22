@@ -252,7 +252,7 @@ export async function execVideoTask(
       return
     }
     bar.update(time)
-    if (Math.abs(DURATION - time) < 1) {
+    if (Math.abs(DURATION - time) < 0.5) {
       bar.stop()
       clearInterval(findTopicId)
       clearInterval(timeUpdateId)

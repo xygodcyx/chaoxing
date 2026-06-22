@@ -28,6 +28,8 @@ export class DataManager extends Singleton {
 
   public onlyVideoMode: boolean = false
 
+  public courseIndex: number = 2
+
   public globalTaskLink: string = ''
 
   public curTask: TaskItem | null = null

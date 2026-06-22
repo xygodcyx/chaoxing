@@ -23,7 +23,7 @@ export interface EnvUserInfo {
   course?: string
   task?: string
 }
-export interface CommandUserInfo extends EnvUserInfo {}
+export interface CommandUserInfo extends EnvUserInfo { }
 
 export interface UserStatus {
   info: UserInfo
@@ -35,6 +35,7 @@ export interface CommandRun {
   phone: string
   course: string
   task: string
+  courseBtnIndex: string
   show: boolean
   onlyVideo: boolean
   force: boolean

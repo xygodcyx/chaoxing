@@ -306,7 +306,7 @@ export async function getLoggedChromePage(phone: string) {
     await newPage.waitForLoadState('networkidle');
 
     // 静音新页面
-    await newPage.evaluate(() => {
+    newPage.evaluate(() => {
       // 静音所有媒体元素
       const muteMedia = () => {
         document.querySelectorAll('video').forEach((el) => {
@@ -320,6 +320,8 @@ export async function getLoggedChromePage(phone: string) {
       // 监听动态添加的媒体元素
       const observer = new MutationObserver(muteMedia);
       observer.observe(document.body, { childList: true, subtree: true });
+    }).catch((error) => {
+      console.error('静音新页面时发生错误，已忽略请继续操作:', error);
     });
 
     console.log('新页面已静音');

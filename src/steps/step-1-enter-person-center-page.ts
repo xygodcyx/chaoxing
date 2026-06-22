@@ -74,7 +74,6 @@ export async function enterPersonCenter(page: Page) {
       (await courseLoc
         .locator('.color1')
         .getAttribute('href')) || ''
-
     // const barCount = await courseLoc
     //   .locator('.bar-tip')
     //   .count()
