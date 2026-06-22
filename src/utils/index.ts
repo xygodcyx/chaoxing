@@ -300,11 +300,15 @@ export async function getLoggedChromePage(phone: string) {
   })
 
   context.on('page', async (newPage) => {
-    console.log('新页面打开，正在静音...');
 
     // 等待新页面加载
     await newPage.waitForLoadState('networkidle');
-
+    const title = await newPage.title()
+    console.log(title)
+    if (newPage.url() !== 'about:blank' || title !== '直播') {
+      return
+    }
+    console.log('新页面打开，正在静音...');
     // 静音新页面
     newPage.evaluate(() => {
       // 静音所有媒体元素
@@ -322,9 +326,10 @@ export async function getLoggedChromePage(phone: string) {
       observer.observe(document.body, { childList: true, subtree: true });
     }).catch((error) => {
       console.error('静音新页面时发生错误，已忽略请继续操作:', error);
+    }).then(() => {
+      console.log('新页面已静音');
     });
 
-    console.log('新页面已静音');
   });
 
 

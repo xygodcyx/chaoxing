@@ -32,11 +32,17 @@ export async function enterPersonCenter(page: Page) {
     return []
   }
 
+  const course_page_url_base = await page.locator(".currentpage").getAttribute("href") || ''
+
+  const course_url = course_page_url_base.split(',')[1].slice(1).slice(0, -2)
+
+  console.log("课程页面URL:", course_url)
+
   await frame.waitForLoadState('domcontentloaded')
 
   const newUrl = (await iframe?.getAttribute('src')) || ''
 
-  await page.goto(newUrl)
+  await page.goto(course_url)
 
   await page.waitForLoadState('domcontentloaded')
 
