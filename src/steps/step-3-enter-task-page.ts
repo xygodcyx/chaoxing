@@ -7,6 +7,7 @@ import { EVENTS_ENUM } from '../enum/index'
 import { LoggerManager } from '../runtime/LoggerManager'
 import { execVideoTask } from './tasks/videoTask'
 import { execReadTask } from './tasks/readTask'
+import { execChapterTestTask } from './tasks/chapterTestTask'
 import { safeCallFunc } from '../utils'
 
 export async function enterTaskPage(
@@ -74,12 +75,7 @@ export async function enterTaskPage(
 
   pageTitle = await page.title()
 
-  // 如果第一个任务点是学习目标页, 那么就会自动跳过从而进入到这里, 如果第一个就是视频页, 那也会进入到这里
-  if (
-    pageTitle === '视频' ||
-    pageTitle === '课程' ||
-    pageTitle === ''
-  ) {
+  const runVideoTask = async () => {
     await safeCallFunc(
       async () =>
         await execVideoTask(page, task, searchObj),
@@ -89,13 +85,105 @@ export async function enterTaskPage(
         silent: true,
       },
     )
-  } else {
-    const pageTitle = await page.title()
-    const pageUrl = page.url()
-    LoggerManager.Instance.warn(
-      `未知页面: ${pageTitle} , 跳过该任务请手动前往页面进行debug: ${pageUrl}`,
+  }
+
+  const runQuizTask = async () => {
+    await safeCallFunc(
+      async () => await execChapterTestTask(page, task),
+      {
+        message: `执行 ${task.title} 时失败, 页面地址: ${page.url()}`,
+      },
     )
-    EventManager.Instance.emit(EVENTS_ENUM.TASK_DONE, task)
+  }
+
+  const runReadTask = async () => {
+    await safeCallFunc(
+      async () => await execReadTask(page, task),
+      {
+        message: '执行 阅读任务 时失败',
+      },
+    )
+  }
+
+  // 如果第一个任务是学习目标页, 那么就会自动跳过从而进入到这里; 如果第一个就是视频页, 那也会进入到这里
+  const isQuizTitle = /测验|作业|考试/.test(pageTitle)
+    || /测验|作业|考试/.test(task.title)
+
+  if (
+    pageTitle === '视频'
+    || pageTitle === '课程'
+    || pageTitle === ''
+  ) {
+    await runVideoTask()
     return
   }
+
+  if (isQuizTitle) {
+    await runQuizTask()
+    return
+  }
+
+  // 标题对不上时(新版页面标题五花八门), 用页面结构兜底判断任务类型
+  const kind = await detectTaskKindByDom(page)
+  if (kind === 'test') {
+    await runQuizTask()
+    return
+  }
+  if (kind === 'video') {
+    await runVideoTask()
+    return
+  }
+  if (kind === 'read') {
+    await runReadTask()
+    return
+  }
+
+  LoggerManager.Instance.warn(
+    `未知页面: ${pageTitle} , 跳过该任务请手动前往页面进行debug: ${page.url()}`,
+  )
+  EventManager.Instance.emit(EVENTS_ENUM.TASK_DONE, task)
+}
+
+/** 在任意一层 frame 里找元素, 任务内容基本都在 iframe 里 */
+async function anyFrameHas(page: Page, selector: string) {
+  for (const frame of page.frames()) {
+    try {
+      if ((await frame.locator(selector).count()) > 0) return true
+    }
+    catch {
+      // frame 正在导航 / 已销毁, 当作没有
+    }
+  }
+  return false
+}
+
+/** 页面标题不可靠时, 靠 DOM 结构猜这个任务点是什么类型 */
+async function detectTaskKindByDom(page: Page) {
+  // 播放器: 老皮肤 #reader, 新皮肤原生 video / videojs
+  if (
+    await anyFrameHas(
+      page,
+      '#reader, video, .vjs-tech, .ans-videoquiz-opt',
+    )
+  ) {
+    return 'video'
+  }
+  // 测验 / 作业: 题目节点
+  if (
+    await anyFrameHas(
+      page,
+      '.singleQuesId, .questionLi, #ZyBottom, .newTestType',
+    )
+  ) {
+    return 'test'
+  }
+  if (
+    await anyFrameHas(
+      page,
+      '.docReader, #docReader, iframe[src*="document"]',
+    )
+  ) {
+    return 'read'
+  }
+  return ''
 }

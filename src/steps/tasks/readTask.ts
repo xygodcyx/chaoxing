@@ -16,6 +16,7 @@ export async function execReadTask(
   }
   const frameData = await page
     .frameLocator('iframe')
+    .first()
     .owner()
     .getAttribute('data');
   if (!frameData) {

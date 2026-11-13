@@ -1,12 +1,13 @@
-import type { Locator, Page } from 'playwright'
+import type { Page } from 'playwright'
 import { DataManager } from '../runtime/DataManager'
-import {
-  getHiddenInputValue,
-  waitAlways,
-} from '../utils/index'
-import { BASE_URL, BASE_TASK_URL } from '../consts/index'
-import type { CourseItem, TaskItem } from '../types/index'
 import { LoggerManager } from '../runtime/LoggerManager'
+import type { CourseItem, TaskItem } from '../types/index'
+import { settlePage } from '../parsers/pageContext'
+import {
+  collectChapterTasks,
+  readCourseContext,
+  resolveChapterPageUrl,
+} from '../parsers/chapterList'
 
 export async function enterCoursePage(
   page: Page,
@@ -16,121 +17,39 @@ export async function enterCoursePage(
     `进入${course.title} 章节页面, 开始获取任务信息...`,
   )
 
-  await page.goto(course.link)
-  await page.waitForLoadState('domcontentloaded')
+  const entryUrl = withCourseIndex(course.link)
+  LoggerManager.Instance.info(`正在进入网页: ${entryUrl}`)
 
-  await page.waitForLoadState('networkidle')
-  // clazzid=138708887&courseid=260244521&knowledgeid=705052636&num=0&ut=s&cpi=514792978&v=2025-0424-1038-4&mooc2=1&isMicroCourse=false&editorPreview=0&crossId"
-  const curCourseContext: Record<string, string> = {}
-  curCourseContext.courseid = await getHiddenInputValue(
-    page,
-    'courseid',
-    'courseid',
-  )
-  curCourseContext.clazzid = await getHiddenInputValue(
-    page,
-    'clazzid',
-    'clazzid',
-  )
-  curCourseContext.cpi = await getHiddenInputValue(
-    page,
-    'cpi',
-    'cpi',
-  )
+  await page.goto(entryUrl)
+  await settlePage(page, 1200)
 
-  curCourseContext.num = '0' // 任务点索引
-  curCourseContext.v = '2025-0424-1038-4'
-  curCourseContext.mooc2 = '1'
-  curCourseContext.isMicroCourse = 'false'
-  curCourseContext.editorPreview = '0'
-  curCourseContext.crossId = ''
+  // 课程外壳页里既有 courseid/clazzid/cpi, 也有新旧版才有的 enc
+  let context = await readCourseContext(page, entryUrl)
 
-  const src = page.url()
-  const queryParams = new URLSearchParams(src.split('?')[1])
-  queryParams.set('pageHeader', (DataManager.Instance.courseIndex - 1).toString())
+  // 新版外壳页有时把章节树直接渲染在当前文档, 有时在 iframe 里
+  let tasks = await collectChapterTasks(page, context)
 
-  const url = `${src.split('?')[0]}?${queryParams.toString()}`
-  LoggerManager.Instance.info(`正在进入网页: ${url}`)
-  await page.goto(url)
-  await page.waitForLoadState('domcontentloaded')
+  if (tasks.length === 0) {
+    const chapterUrl = await resolveChapterPageUrl(page, context)
+    if (chapterUrl) {
+      LoggerManager.Instance.info(`正在进入网页: ${chapterUrl}`)
+      await page.goto(chapterUrl)
+      await settlePage(page, 1500)
 
-  const targetCourseUrl =
-    (await page.locator('iframe').getAttribute('src')) || ''
-
-  await page.goto(BASE_URL + targetCourseUrl)
-
-  await page.waitForLoadState('domcontentloaded')
-
-  curCourseContext.enc = await getHiddenInputValue(
-    page,
-    'enc',
-  )
-
-  const allChapterItems = await page
-    .locator('.chapter_item')
-    .all()
-
-  const tasks: Array<TaskItem> = []
-
-  for (const chapterItem of allChapterItems) {
-    const title = await chapterItem.getAttribute('title')
-    if (!title) {
-      continue
+      // 章节页可能带来更完整的上下文(比如 enc 在外壳页里是空值)
+      context = {
+        ...context,
+        ...(await readCourseContext(page, chapterUrl)),
+      }
+      tasks = await collectChapterTasks(page, context)
     }
-
-    // 二级按钮
-    curCourseContext.title = title
-
-    const id = (await chapterItem.getAttribute('id')) || ''
-    const knowledgeid = id.slice(3)
-
-    curCourseContext.knowledgeid = knowledgeid
-
-    const searchObj = new URLSearchParams()
-
-    for (const key in curCourseContext) {
-      if (key === 'title') continue
-      searchObj.append(key, curCourseContext[key])
-    }
-
-    const finishedCount = await chapterItem
-      .getByText('已完成')
-      .count()
-
-    const isFinish = finishedCount !== 0
-
-    const hasLessCount = await chapterItem
-      .locator('.catalog_points_yi')
-      .count()
-
-    let lessCount = 0
-
-    if (hasLessCount > 0) {
-      const temp = await chapterItem
-        .locator('.catalog_points_yi')
-        .innerText()
-      lessCount = +temp
-    }
-
-    const task: TaskItem = {
-      title,
-      link: `${BASE_TASK_URL}?${searchObj.toString()}`,
-      searchParams: searchObj.toString(),
-      isFinish,
-      lessCount: isFinish ? 0 : +lessCount,
-      knowledgeid,
-      index: -1,
-    }
-
-    LoggerManager.Instance.debug(
-      `获取 ${task.title} 任务数据成功`,
-    )
-
-    tasks.push(task)
   }
 
-  for (let i = 0; i < tasks.length; i++) {
-    tasks[i].index = i
+  if (tasks.length === 0) {
+    LoggerManager.Instance.warn(
+      `没有解析到 ${course.title} 的章节任务, 当前页面: ${page.url()}`,
+    )
+    return []
   }
 
   LoggerManager.Instance.success(
@@ -138,4 +57,24 @@ export async function enterCoursePage(
   )
 
   return tasks
+}
+
+/**
+ * 旧版课程入口是 /visit/cours/xxx?pageHeader=n 这种分页形式,
+ * 一个课程外壳页里可能挂着多门课, 需要把 pageHeader 改到当前课程
+ * 新版的 mycourse 外壳不带这个分页, 改了反而会 404
+ */
+function withCourseIndex(link: string) {
+  if (!/visit\/cours/i.test(link)) return link
+  try {
+    const url = new URL(link)
+    url.searchParams.set(
+      'pageHeader',
+      (DataManager.Instance.courseIndex - 1).toString(),
+    )
+    return url.toString()
+  }
+  catch {
+    return link
+  }
 }

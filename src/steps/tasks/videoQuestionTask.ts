@@ -5,12 +5,14 @@ import {
   SINGLE_CHOICES,
 } from '../../consts';
 import { LoggerManager } from '../../runtime/LoggerManager';
+import { resolveContentFrameLocator } from '../../parsers/pageContext';
 
 export async function execAnswerQuestionTask(
   page: Page,
   tkTitle: string,
 ) {
-  const frameLoc = page.frameLocator('iframe');
+  // 页面里可能有多个 iframe, 认准含弹题容器的那个
+  const frameLoc = await resolveContentFrameLocator(page, '.tkTopic');
   const tkTopicLoc = frameLoc.locator('.tkTopic');
 
   const submitButtonLoc = tkTopicLoc.locator(

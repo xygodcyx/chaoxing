@@ -1,5 +1,6 @@
 import { Locator, Page } from 'playwright'
 import { EVENTS_ENUM } from '../../enum'
+import { resolveContentFrameLocator } from '../../parsers/pageContext'
 import EventManager from '../../runtime/EventManager'
 import { LoggerManager } from '../../runtime/LoggerManager'
 import {
@@ -10,11 +11,15 @@ import {
 } from '../../types'
 import {
   cleanString,
-  saveArrayIndex,
   waitAlways,
   waitForRandomTime,
 } from '../../utils'
 import { decodeFont } from '../../utils/fontDecoder'
+import {
+  clickChoice,
+  collectChoiceLocs,
+  readChoiceText,
+} from '../../utils/choice'
 import { fetchAnswersFromAI } from '../../utils/ai'
 import { DataManager } from '../../runtime/DataManager'
 
@@ -44,18 +49,35 @@ export async function execChapterTestTask(
     return
   }
 
-  const taskFrame = page.frameLocator(
-    'iframe[src*="work/index.html"]',
-  )
+  // 章节测验的外壳: 老版本是 work/index.html 这个 iframe, 新版本可能直接挂在
+  // #frame_content 下, 逐级回退, 别让某一版结构把整轮跑崩
+  const workFrameCount = await page
+    .locator('iframe[src*="work/index.html"]')
+    .count()
 
-  const finalQuizFrame = taskFrame.frameLocator(
-    'iframe#frame_content',
-  )
+  const taskFrame = workFrameCount > 0
+    ? page.frameLocator('iframe[src*="work/index.html"]').first()
+    : await resolveContentFrameLocator(page)
 
-  const wrapLoc = finalQuizFrame.locator('#ZyBottom')
+  const innerFrameCount = await taskFrame
+    .locator('iframe#frame_content')
+    .count()
 
-  const wrapCount = await wrapLoc.count()
-  if (wrapCount === 0) {
+  const finalQuizFrame = innerFrameCount > 0
+    ? taskFrame.frameLocator('iframe#frame_content').first()
+    : taskFrame
+
+  // 绝大多数皮肤都把题目套在 #ZyBottom 里; 个别新皮肤没有这一层, 退回整个文档
+  const zyBottom = finalQuizFrame.locator('#ZyBottom')
+  const wrapLoc = (await zyBottom.count()) > 0
+    ? zyBottom
+    : finalQuizFrame.locator('body')
+
+  // 认题的锚点: 老皮肤 .singleQuesId, 新皮肤 .questionLi, 都没有就不是答题页
+  const questionNodeCount = await wrapLoc
+    .locator('.singleQuesId, .questionLi')
+    .count()
+  if (questionNodeCount === 0) {
     LoggerManager.Instance.warn(
       '当前页面不是测试页, 跳过',
     )
@@ -63,9 +85,12 @@ export async function execChapterTestTask(
     return
   }
 
+  // 状态标签有可能没有(新皮肤), 取不到就当"还没做过"
   const status = await finalQuizFrame
     .locator('.testTit_status')
-    .textContent()
+    .first()
+    .textContent({ timeout: 3000 })
+    .catch(() => '')
 
   if (status === '已完成' || status === 'Completed') {
     LoggerManager.Instance.success(
@@ -75,19 +100,45 @@ export async function execChapterTestTask(
     return
   }
 
-  const btnSubmit = finalQuizFrame.locator('.btnSubmit')
+  // 提交按钮在各版皮肤里叫法不一样, 挨个试
+  const SUBMIT_SELECTORS = [
+    '.btnSubmit',
+    '#submitBtn',
+    '.completeBtn',
+    'a[onclick*="submit"]',
+  ]
+  let submitLoc: Locator | null = null
+  for (const selector of SUBMIT_SELECTORS) {
+    if ((await finalQuizFrame.locator(selector).count()) > 0) {
+      submitLoc = finalQuizFrame.locator(selector).first()
+      break
+    }
+  }
+  if (!submitLoc) {
+    LoggerManager.Instance.warn(
+      `${task.title} 没有找到提交按钮, 跳过该任务`,
+    )
+    EventManager.Instance.emit(EVENTS_ENUM.TASK_DONE, task)
+    return
+  }
 
   const subjectTypeLocs = await wrapLoc
     .locator('.newTestType')
     .all()
 
-  const subjectLocs = await wrapLoc
+  // 不同皮肤的题目容器类名不同：老皮肤用 .singleQuesId，部分新皮肤用
+  // .questionLi，这里两者都收，取能取到的那一份。
+  let subjectLocs = await wrapLoc
     .locator('.singleQuesId')
     .all()
 
-  const allChoiceLocs = await wrapLoc
-    .locator('[class*="before-after"]')
-    .all()
+  if (!subjectLocs.length) {
+    subjectLocs = await wrapLoc.locator('.questionLi').all()
+  }
+
+  // 选项元素与解析顺序严格一一对应，避免「解析时一套 DOM、点击时另一套 DOM」
+  // 导致全局 index 错位。
+  const allChoiceLocs: Array<Locator> = []
 
   const subjectList: Array<SubjectItem> = []
 
@@ -116,16 +167,39 @@ export async function execChapterTestTask(
   }
 
   let choiceIndex = 0
-  for (const subjectTypeLoc of subjectTypeLocs) {
-    const typeContent = await subjectTypeLoc.textContent()
-    const subjectLength = +(
-      typeContent?.match(subjectLengthRegex)?.[1] || '1'
-    )
-    const subjectType = (typeContent?.match(
-      subjectTypeRegex,
-    )?.[1] || '') as SubjectType
-    for (let index = 0; index < subjectLength; index++) {
+  // 题型标注: 常见的皮肤是每组题前面有个 .newTestType; 个别皮肤没有这一层,
+  // 这时退化成"一题一组", 题型留空(后面按选项结构自己判断)
+  const hasTypeMarkers = subjectTypeLocs.length > 0
+  const typeGroups = await Promise.all(
+    (hasTypeMarkers ? subjectTypeLocs : subjectLocs).map(
+      async (loc) => {
+        const content = hasTypeMarkers
+          ? (await loc.textContent()) || ''
+          : ''
+        return {
+          type: (content.match(subjectTypeRegex)?.[1] || '') as SubjectType,
+          length: hasTypeMarkers
+            ? +(content.match(subjectLengthRegex)?.[1] || '1')
+            : 1,
+        }
+      },
+    ),
+  )
+
+  // 题目元素先耗尽时（题型标注与题目元素数量对不上），直接结束解析
+  let subjectLocsExhausted = false
+  for (const group of typeGroups) {
+    if (subjectLocsExhausted) break
+    const subjectType = group.type
+    for (let index = 0; index < group.length; index++) {
       const subjectLoc = subjectLocs[subjectLocIndexOffset]
+      if (!subjectLoc) {
+        LoggerManager.Instance.warn(
+          `${task.title} 解析到的题目数量少于题型标注的数量, 停止解析`,
+        )
+        subjectLocsExhausted = true
+        break
+      }
       subjectLocIndexOffset++
       const subjectTitle =
         (
@@ -137,18 +211,13 @@ export async function execChapterTestTask(
 
       const decodeTitle = await decodeFont(fontBase64, cleanedTitle)
 
-      const choiceLocs = await subjectLoc
-        .locator(
-          subjectType === '多选题'
-            ? '.before-after-checkbox'
-            : '.before-after',
-        )
-        .all()
+      const choiceLocs = await collectChoiceLocs(
+        subjectLoc,
+        subjectType === '多选题',
+      )
       const choices: Array<ChoiceItem> = []
       for (const choiceLoc of choiceLocs) {
-        const choiceContent = await choiceLoc
-          .locator('.after')
-          .textContent()
+        const choiceContent = await readChoiceText(choiceLoc)
         const cleanChoiceContent = cleanString(
           choiceContent || '',
         )
@@ -161,7 +230,17 @@ export async function execChapterTestTask(
           content: decodeChoiceContent,
         }
         choices.push(choiceItem)
+        allChoiceLocs.push(choiceLoc)
         choiceIndex++
+      }
+
+      if (!choices.length) {
+        const outerHTML = await subjectLoc
+          .evaluate((el: HTMLElement) => el.outerHTML)
+          .catch(() => '')
+        LoggerManager.Instance.warn(
+          `${task.title} 第 ${subjectLocIndexOffset} 题没有解析到选项, 题目: ${decodeTitle}, 结构: ${outerHTML.slice(0, 2000)}`,
+        )
       }
 
       subjectList.push({
@@ -197,29 +276,55 @@ export async function execChapterTestTask(
     `AI 返回了答案: ${JSON.stringify(aiAnswers)}`,
   )
 
-  for (const answerIndex of aiAnswers.flat()) {
-    const choiceLoc =
-      allChoiceLocs[
-      saveArrayIndex(answerIndex, allChoiceLocs.length)
-      ]
-    await choiceLoc.evaluate((el: HTMLElement) => el.click())
+  if (!allChoiceLocs.length) {
+    throw new Error(
+      `${task.title} 没有解析到任何选项, 无法自动答题`,
+    )
+  }
+
+  const clickedIndexes = new Set<number>()
+  for (const rawIndex of aiAnswers.flat()) {
+    const answerIndex = Number(rawIndex)
+    if (!Number.isInteger(answerIndex)) continue
+    if (
+      answerIndex < 0 ||
+      answerIndex >= allChoiceLocs.length
+    ) {
+      LoggerManager.Instance.warn(
+        `AI 返回的选项下标 ${answerIndex} 超出范围, 已跳过`,
+      )
+      continue
+    }
+    if (clickedIndexes.has(answerIndex)) continue
+    clickedIndexes.add(answerIndex)
+    await clickChoice(allChoiceLocs[answerIndex])
+    await waitForRandomTime(200, 100)
   }
 
 
-  const popok = finalQuizFrame.locator('#popok')
-
-  await btnSubmit.evaluate((el: HTMLElement) => el.click())
-
+  await submitLoc.evaluate((el: HTMLElement) => el.click())
 
   await waitForRandomTime(2000)
 
-  await popok.evaluate((el: HTMLElement) => el.click())
+  // 交卷后可能弹"确认提交", 也可能直接出成绩, 弹了就点掉
+  const CONFIRM_SELECTORS = ['#popok', '.popok', '.btnOk', '#popokBtn']
+  for (const selector of CONFIRM_SELECTORS) {
+    const confirmLoc = finalQuizFrame.locator(selector).first()
+    if ((await confirmLoc.count()) > 0) {
+      await confirmLoc
+        .evaluate((el: HTMLElement) => el.click())
+        .catch(() => {})
+      break
+    }
+  }
 
   const achievement = await finalQuizFrame
     .locator('.achievement i')
-    .textContent()
+    .first()
+    .textContent({ timeout: 5000 })
+    .catch(() => '')
   LoggerManager.Instance.success(
-    `答题完成, 本次成绩：${achievement} 分`,
+    `答题完成, 本次成绩：${achievement || '未知'} 分`,
   )
   // await waitAlways();
   await waitForRandomTime(2000)

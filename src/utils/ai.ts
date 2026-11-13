@@ -1,8 +1,8 @@
-import { CHAOXING_AI_PROMPT } from '../consts';
-import { SubjectItem } from '../types';
-import OpenAI from 'openai';
+import type { SubjectItem } from '../types'
+import OpenAI from 'openai'
+import { CHAOXING_AI_PROMPT } from '../consts'
 
-let openai: OpenAI;
+let openai: OpenAI
 
 export async function fetchAnswersFromAI(
   quizData: SubjectItem,
@@ -11,7 +11,7 @@ export async function fetchAnswersFromAI(
     openai = new OpenAI({
       baseURL: 'https://api.deepseek.com',
       apiKey: process.env.DEEPSEEK_API_KEY,
-    });
+    })
   }
   try {
     const completion = await openai.chat.completions.create(
@@ -26,23 +26,24 @@ export async function fetchAnswersFromAI(
             content: `这是你要回答的问题：${JSON.stringify(quizData)}`,
           },
         ],
-        model: 'deepseek-v4-pro',
+        model: 'deepseek-flash',
       },
-    );
+    )
 
-    const rawContent =
-      completion.choices[0].message.content || '[]';
+    const rawContent
+      = completion.choices[0].message.content || '[]'
 
     // 健壮处理：移除 AI 可能误加的 Markdown 标签
     const cleanJson = rawContent
       .replace(/```json|```/g, '')
-      .trim();
+      .trim()
 
     // 强制转为数字数组
-    const result: number[] = JSON.parse(cleanJson);
-    return result;
-  } catch (error) {
-    console.error('[DeepSeek] 请求失败:', error);
-    return [];
+    const result: number[] = JSON.parse(cleanJson)
+    return result
+  }
+  catch (error) {
+    console.error('[DeepSeek] 请求失败:', error)
+    return []
   }
 }

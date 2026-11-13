@@ -14,6 +14,7 @@ import {
 } from '../../utils'
 import { execAnswerQuestionTask } from './videoQuestionTask'
 import { ConfigManager } from '../../runtime/ConfigManager'
+import { resolveContentFrameLocator } from '../../parsers/pageContext'
 
 export async function execVideoTask(
   page: Page,
@@ -27,7 +28,8 @@ export async function execVideoTask(
 
   let isLivePage = false
 
-  const frameLoc = page.frameLocator('iframe')
+  // 有些版本会同时挂多个 iframe(埋点 / 广告 / 统计), 直接取 'iframe' 会撞 strict mode
+  const frameLoc = await resolveContentFrameLocator(page, '#reader, .liveStatus')
 
   const frameCount = await page.locator('iframe').count()
 

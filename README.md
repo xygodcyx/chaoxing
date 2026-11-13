@@ -18,6 +18,7 @@
 * **⚡ 字体解密引擎**：基于 [chaoxing_solution_of_font_confusion](https://github.com/TellMeYourWish/chaoxing_solution_of_font_confusion)，感谢开源支持。
 * **🤖 AI 智能决策**：原生集成 **DeepSeek-V3** 模型，支持单选、多选、判断题的高精准度逻辑推理与自动填充。
 * **多用户沙盒架构**：支持无限账号并发或切换，每个账号拥有独立的 `Cookie`、`Cache` 和 `Private Env` 配置文件。
+* **🌐 多版本页面适配**：课程列表页与章节页在不同超星版本下结构差异很大（个人空间 `spaceVersion`、`visit/interaction`、新版 `#frame_content-zj` 外壳等），解析层按「多策略 + DOM 通用扫描」逐步回退，不依赖某一版的类名。
 
 ---
 
@@ -113,6 +114,8 @@ chaoxing run -o
 1. **滑块验证码**：若程序卡住，请带上 `-s` 参数启动，在浏览器窗口中手动完成验证。
 2. **AI Key 缺失**：若未配置 Key，程序将自动跳过章节测验。建议配置在 `Private Env` 中。
 3. **Linux 服务器**：在 Headless 模式下运行，请确保已安装依赖且不带 `-s` 参数。
+4. **页面没被识别**：课程/章节解析全程会把命中的策略写进日志（`课程列表页面:` / `章节页面(iframe|导航|拼接):` / `在第 N 个 frame 中扫描到 X 个课程链接`）。如果某个版本解析不到，先用 `-s` 打开窗口，按 `src/parsers/` 里的选择器清单对照页面补一条即可，不需要改主流程。
+5. **解析层分工**：`src/parsers/pageContext.ts`（URL/隐藏域/frame 兜底）、`courseList.ts`（课程列表）、`chapterList.ts`（章节任务）。主流程仍是「先取课程 → 再逐课执行」，只是把「怎么取」拆成了可替换的多策略。
 
 ---
 

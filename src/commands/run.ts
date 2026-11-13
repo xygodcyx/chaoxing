@@ -1,23 +1,23 @@
-import * as p from '@clack/prompts'
-
-import dotenv from 'dotenv'
-import os from 'os'
-import path from 'path'
-
-import Action from '../action/Action'
-import { CACHE_KEY_ENUM } from '../enum/index'
-import { CacheManager } from '../runtime/CacheManager'
-import { ConfigManager } from '../runtime/ConfigManager'
-import { DataManager } from '../runtime/DataManager'
-import { LoggerManager } from '../runtime/LoggerManager'
 import type {
   CommandRun,
   CommandUserInfo,
   UserStatus,
 } from '../types/index'
 
-import { registerCommand } from './index'
+import os from 'node:os'
+import path from 'node:path'
+import * as p from '@clack/prompts'
+
+import dotenv from 'dotenv'
+import Action from '../action/Action'
+import { CACHE_KEY_ENUM } from '../enum/index'
+import { CacheManager } from '../runtime/CacheManager'
+import { ConfigManager } from '../runtime/ConfigManager'
+import { DataManager } from '../runtime/DataManager'
+import { LoggerManager } from '../runtime/LoggerManager'
+
 import { getStorageDirName, maskPhone } from '../utils'
+import { registerCommand } from './index'
 
 export async function initUserStatus(
   commandUser: CommandUserInfo = {
@@ -50,15 +50,15 @@ export async function initUserStatus(
       phone: commandUser.phone,
     },
     curCourseName:
-      commandUser.course ||
-      cacheUser.curCourseName ||
-      process.env.COURSE ||
-      '',
+      commandUser.course
+      || cacheUser.curCourseName
+      || process.env.COURSE
+      || '',
     curTaskName:
-      commandUser.task ||
-      cacheUser.curTaskName ||
-      process.env.TASK ||
-      '',
+      commandUser.task
+      || cacheUser.curTaskName
+      || process.env.TASK
+      || '',
   }
 
   await CacheManager.Instance.save(
@@ -114,9 +114,12 @@ export function registerRunCommand() {
       },
     ],
     async (str) => {
-      let phone = str.phone
+      let phone = str.phone ?? process.env.PHONE
+      phone = phone || process.env.PHONE
       DataManager.Instance.onlyVideoMode = str.onlyVideo
-      DataManager.Instance.courseIndex = str.courseBtnIndex ? parseInt(str.courseBtnIndex) : 2
+      DataManager.Instance.courseIndex = str.courseBtnIndex
+        ? parseInt(str.courseBtnIndex)
+        : 2
       if (!phone) {
         phone = (await p.password({
           message: '请输入手机号',
@@ -135,23 +138,8 @@ export function registerRunCommand() {
       }
 
       try {
-        const envPath = path.resolve(
-          process.env.NODE_ENV === 'production'
-            ? os.homedir()
-            : '',
-          '.chaoxing',
-          getStorageDirName(phone),
-          '.env',
-        )
-
-        dotenv.config({
-          path: envPath,
-          override: true,
-          quiet: true,
-        })
-
-        const course = str.course
-        const task = str.task
+        const course = str.course || process.env.COURSE
+        const task = str.task || process.env.TASK
         const show = str.show
 
         ConfigManager.Instance.launchOption.headless = !show
@@ -173,7 +161,8 @@ export function registerRunCommand() {
         )
 
         await action.init()
-      } catch (error: any) {
+      }
+      catch (error: any) {
         LoggerManager.Instance.error(
           `任务初始化出错：${error.message}`,
           error,

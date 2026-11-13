@@ -10,7 +10,11 @@ import type { Page } from 'playwright'
 import type { CourseItem } from '../types/index'
 import { LoggerManager } from '../runtime/LoggerManager'
 import { DataManager } from '../runtime/DataManager'
-import { getHiddenInputValue } from '../utils'
+import {
+  collectCourses,
+  resolveCourseListUrl,
+} from '../parsers/courseList'
+import { settlePage } from '../parsers/pageContext'
 
 export async function enterPersonCenter(page: Page) {
   LoggerManager.Instance.start(
@@ -18,33 +22,23 @@ export async function enterPersonCenter(page: Page) {
   )
 
   await page.goto('https://i.mooc.chaoxing.com/space/index')
-
   await page.waitForLoadState('domcontentloaded')
 
-  const iframe = await page.waitForSelector('iframe')
-  if (!iframe) {
-    LoggerManager.Instance.error(`获取课程失败...`)
+  // 课程列表的入口地址在不同 spaceVersion 下位置不同,
+  // 统一交给 resolveCourseListUrl 去找
+  const courseListUrl = await resolveCourseListUrl(page)
+
+  if (!courseListUrl) {
+    LoggerManager.Instance.error(
+      `没有找到课程列表入口, 获取课程失败...`,
+    )
     return []
   }
-  const frame = await iframe.contentFrame()
-  if (!frame) {
-    LoggerManager.Instance.error(`获取课程失败...`)
-    return []
-  }
 
-  const course_page_url_base = await page.locator(".currentpage").getAttribute("href") || ''
+  LoggerManager.Instance.debug(`课程列表页面: ${courseListUrl}`)
 
-  const course_url = course_page_url_base.split(',')[1].slice(1).slice(0, -2)
-
-  console.log("课程页面URL:", course_url)
-
-  await frame.waitForLoadState('domcontentloaded')
-
-  const newUrl = (await iframe?.getAttribute('src')) || ''
-
-  await page.goto(course_url)
-
-  await page.waitForLoadState('domcontentloaded')
+  await page.goto(courseListUrl)
+  await settlePage(page, 1500)
 
   const isOldVersion = page
     .url()
@@ -60,40 +54,16 @@ export async function enterPersonCenter(page: Page) {
         'mooc2-ans.chaoxing.com/mooc2-ans/visit/interaction',
       )
     await page.goto(newVersionUrl)
-    await page.waitForLoadState('domcontentloaded')
+    await settlePage(page, 1500)
   }
 
-  await page.waitForSelector('.course-list')
+  const courses = await collectCourses(page)
 
-  const coursesLoc = await page.locator('.course').all()
-
-  const courses: Array<CourseItem> = []
-  // courseid=260244521&clazzid=138708887&cpi=514792978&enc=9f6b93a268265646e8e5444dc3a8e7d0&t=1775707123523&pageHeader=1&v=2&hideHead=0
-  let index = 0
-  for (const courseLoc of coursesLoc) {
-    const title =
-      (await courseLoc
-        .locator('.course-name')
-        .textContent()) || ''
-
-    const link =
-      (await courseLoc
-        .locator('.color1')
-        .getAttribute('href')) || ''
-    // const barCount = await courseLoc
-    //   .locator('.bar-tip')
-    //   .count()
-
-    const course: CourseItem = {
-      title,
-      link,
-      isFinish: false,
-      index,
-    }
-
-    courses.push(course)
-
-    index++
+  if (courses.length === 0) {
+    LoggerManager.Instance.error(
+      `课程列表解析失败, 当前页面: ${page.url()}`,
+    )
+    return []
   }
 
   const options = courses.map((c) => {
@@ -110,7 +80,7 @@ export async function enterPersonCenter(page: Page) {
   )
   intro(`选课`)
   // Do stuff
-  const additionalCourses = await multiselect({
+  const additionalCourses = await multiselect<CourseItem>({
     message: '选择要刷的课程',
     initialValues: initialCourse ? [initialCourse] : [],
     options,
